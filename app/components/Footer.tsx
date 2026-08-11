@@ -8,14 +8,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
         {/* Column 1: Brand Info */}
         <div>
-          <div className="flex items-center gap-2 mb-4">
-  <div className="bg-white px-3.5 py-2 rounded-xl shadow-lg inline-flex items-center overflow-hidden">
+       <div className="flex items-center gap-2 mb-4">
+  <div className="inline-flex items-center">
     <Image
-      src="/images/logo.png"
+      src="/images/logo.png?v=2"
       alt="Aristocrat 3D Printing Logo"
       width={240}
-      height={80}
-      className="object-cover scale-[1.8] h-10 w-32 my-1"
+      height={70}
+      className="object-contain h-12 w-auto"
     />
   </div>
 </div>
