@@ -9,13 +9,13 @@ export default function Footer() {
         {/* Column 1: Brand Info */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-  <div className="bg-transparent inline-flex items-center">
+  <div className="inline-flex items-center">
     <Image
       src="/images/logo.png"
       alt="Aristocrat 3D Printing Logo"
-      width={170}
-      height={48}
-      className="object-contain h-10 w-auto"
+      width={220}
+      height={60}
+      className="object-contain h-14 w-auto drop-shadow-md"
     />
   </div>
 </div>
