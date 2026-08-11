@@ -33,13 +33,10 @@ export default function Navbar() {
         {/* Left: Logo with clean container background */}
        <Link href="/" className="flex items-center gap-2 group">
   <div className="flex items-center group-hover:scale-105 transition-transform">
-    <Image
+    <img
       src="/images/new-logo.png"
       alt="Aristocrat 3D Printing Logo"
-      width={400}
-      height={200}
-      priority
-      className="object-contain h-14 md:h-16 w-auto"
+      className="h-12 md:h-16 w-auto object-contain"
     />
   </div>
 </Link>

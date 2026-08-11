@@ -10,12 +10,10 @@ export default function Footer() {
         <div>
        <div className="flex items-center gap-2 mb-4">
   <div className="inline-flex items-center">
-    <Image
+    <img
       src="/images/new-logo.png"
       alt="Aristocrat 3D Printing Logo"
-      width={400}
-      height={200}
-      className="object-contain h-16 w-auto"
+      className="h-16 w-auto object-contain"
     />
   </div>
 </div>
