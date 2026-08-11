@@ -7,14 +7,15 @@ export default function Footer() {
     <footer className="bg-[#1A365D] text-slate-300 pt-16 pb-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
         {/* Column 1: Brand Info */}
-        <div className="flex items-center gap-2 mb-4">
-  <div className="inline-flex items-center">
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+  <div className="bg-transparent inline-flex items-center">
     <Image
       src="/images/logo.png"
       alt="Aristocrat 3D Printing Logo"
-      width={160}
-      height={42}
-      className="object-contain h-9 w-auto mix-blend-screen filter brightness-125"
+      width={170}
+      height={48}
+      className="object-contain h-10 w-auto"
     />
   </div>
 </div>
