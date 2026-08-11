@@ -15,7 +15,7 @@ export default function Footer() {
       alt="Aristocrat 3D Printing Logo"
       width={400}
       height={200}
-      className="object-contain h-12 w-auto"
+      className="object-contain h-16 w-auto"
     />
   </div>
 </div>
