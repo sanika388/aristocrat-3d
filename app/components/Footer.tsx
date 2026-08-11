@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Box, Phone, Mail, MapPin, Clock } from "lucide-react";
+import Image from "next/image";
+import { Phone, Mail, MapPin, Clock } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -8,12 +9,15 @@ export default function Footer() {
         {/* Column 1: Brand Info */}
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-9 h-9 rounded-xl bg-[#3182CE] flex items-center justify-center text-white shadow-md">
-              <Box className="w-5 h-5" />
+            <div className="relative h-11 w-auto flex items-center bg-white/5 p-1 rounded-lg">
+              <Image
+                src="/images/logo.png"
+                alt="Aristocrat 3D Printing Logo"
+                width={170}
+                height={48}
+                className="object-contain h-10 w-auto brightness-110"
+              />
             </div>
-            <span className="font-bold text-xl text-white tracking-tight">
-              Aristocrat <span className="text-[#3182CE]">3D</span>
-            </span>
           </div>
           <p className="text-sm text-slate-400 mb-6 leading-relaxed">
             Precision industrial & prototype 3D printing solutions. Bringing engineering concepts to life with absolute dimensional accuracy.
@@ -26,7 +30,7 @@ export default function Footer() {
 
         {/* Column 2: Quick Links */}
         <div>
-          <h4 className="text-white font-semibold text-base mb-4 font-mono uppercase tracking-wider text-xs text-[#3182CE]">Quick Links</h4>
+          <h4 className="text-white font-semibold mb-4 font-mono uppercase tracking-wider text-xs text-[#3182CE]">Quick Links</h4>
           <ul className="space-y-2.5 text-sm">
             <li><Link href="/" className="hover:text-white transition-colors">Home</Link></li>
             <li><Link href="/services" className="hover:text-white transition-colors">Services</Link></li>
@@ -38,7 +42,7 @@ export default function Footer() {
 
         {/* Column 3: Services */}
         <div>
-          <h4 className="text-white font-semibold text-base mb-4 font-mono uppercase tracking-wider text-xs text-[#3182CE]">Our Services</h4>
+          <h4 className="text-white font-semibold mb-4 font-mono uppercase tracking-wider text-xs text-[#3182CE]">Our Services</h4>
           <ul className="space-y-2.5 text-sm">
             <li><Link href="/services#prototype" className="hover:text-white transition-colors">Prototype Printing</Link></li>
             <li><Link href="/services#functional" className="hover:text-white transition-colors">Functional Parts</Link></li>
@@ -49,7 +53,7 @@ export default function Footer() {
 
         {/* Column 4: Contact Info */}
         <div>
-          <h4 className="text-white font-semibold text-base mb-4 font-mono uppercase tracking-wider text-xs text-[#3182CE]">Contact Info</h4>
+          <h4 className="text-white font-semibold mb-4 font-mono uppercase tracking-wider text-xs text-[#3182CE]">Contact Info</h4>
           <ul className="space-y-3 text-sm">
             <li className="flex items-start gap-3">
               <MapPin className="w-5 h-5 text-[#3182CE] shrink-0 mt-0.5" />
