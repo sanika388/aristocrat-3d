@@ -7,15 +7,15 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
         {/* Column 1: Brand Info */}
         <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="bg-white px-3.5 py-2 rounded-xl shadow-md inline-flex items-center">
-              <img
-                src="/images/new-logo.png"
-                alt="Aristocrat 3D Printing Logo"
-                className="h-8 w-auto object-contain"
-              />
-            </div>
-          </div>
+         <div className="flex items-center gap-2 mb-4">
+  <div className="bg-white px-3.5 py-2 rounded-xl shadow-md inline-flex items-center">
+    <img
+      src="/images/new-logo.png"
+      alt="Aristocrat 3D Printing Logo"
+      className="h-9 w-auto object-contain scale-110"
+    />
+  </div>
+</div>
           <p className="text-sm text-slate-400 mb-6 leading-relaxed">
             Precision industrial & prototype 3D printing solutions. Bringing engineering concepts to life with absolute dimensional accuracy.
           </p>

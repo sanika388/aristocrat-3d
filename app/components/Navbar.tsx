@@ -26,16 +26,15 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         
-        {/* Slim, High-Contrast Frosted Logo Badge */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-white px-3 py-1.5 rounded-xl shadow-md border border-slate-100 flex items-center group-hover:scale-105 transition-transform">
-            <img
-              src="/images/new-logo.png"
-              alt="Aristocrat 3D Printing Logo"
-              className="h-7 sm:h-8 w-auto object-contain"
-            />
-          </div>
-        </Link>
+  <div className="bg-white px-3 py-1.5 rounded-xl shadow-md flex items-center group-hover:scale-105 transition-transform">
+    <img
+      src="/images/new-logo.png"
+      alt="Aristocrat 3D Printing Logo"
+      className="h-8 md:h-10 w-auto object-contain scale-110"
+    />
+  </div>
+</Link>
 
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-slate-200">
