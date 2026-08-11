@@ -34,7 +34,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 group">
           <div className="relative h-10 w-auto flex items-center">
             <Image
-              src="/images/logo.png"
+              src="/images/logo.jpeg"
               alt="Aristocrat 3D Printing Logo"
               width={160}
               height={45}
