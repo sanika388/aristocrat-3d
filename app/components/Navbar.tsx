@@ -32,14 +32,14 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Left: Logo with clean container background */}
         <Link href="/" className="flex items-center gap-2 group">
-  <div className="bg-transparent px-2 py-1 flex items-center group-hover:scale-105 transition-transform">
+  <div className="flex items-center group-hover:scale-105 transition-transform">
     <Image
       src="/images/logo.png"
       alt="Aristocrat 3D Printing Logo"
-      width={160}
-      height={45}
+      width={150}
+      height={40}
       priority
-      className="object-contain h-9 sm:h-10 w-auto"
+      className="object-contain h-8 w-auto mix-blend-screen filter brightness-125"
     />
   </div>
 </Link>
