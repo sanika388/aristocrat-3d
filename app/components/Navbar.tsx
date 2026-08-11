@@ -31,10 +31,10 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Left: Logo with clean container background */}
-        <Link href="/" className="flex items-center gap-2 group">
+       <Link href="/" className="flex items-center gap-2 group">
   <div className="flex items-center group-hover:scale-105 transition-transform">
     <Image
-      src="/images/logo.png?v=2"
+      src="/images/new-logo.png"
       alt="Aristocrat 3D Printing Logo"
       width={220}
       height={65}

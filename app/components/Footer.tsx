@@ -11,7 +11,7 @@ export default function Footer() {
        <div className="flex items-center gap-2 mb-4">
   <div className="inline-flex items-center">
     <Image
-      src="/images/logo.png?v=2"
+      src="/images/new-logo.png"
       alt="Aristocrat 3D Printing Logo"
       width={240}
       height={70}
