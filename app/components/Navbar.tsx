@@ -32,17 +32,17 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Left: Logo with clean container background */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-white/95 px-3 py-1.5 rounded-xl shadow-sm flex items-center group-hover:scale-105 transition-transform">
-            <Image
-              src="/images/logo.png"
-              alt="Aristocrat 3D Printing Logo"
-              width={150}
-              height={40}
-              priority
-              className="object-contain h-8 w-auto"
-            />
-          </div>
-        </Link>
+  <div className="bg-transparent px-2 py-1 flex items-center group-hover:scale-105 transition-transform">
+    <Image
+      src="/images/logo.png"
+      alt="Aristocrat 3D Printing Logo"
+      width={160}
+      height={45}
+      priority
+      className="object-contain h-9 sm:h-10 w-auto"
+    />
+  </div>
+</Link>
 
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-slate-700 dark:text-slate-200">
