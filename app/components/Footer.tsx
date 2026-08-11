@@ -13,7 +13,7 @@ export default function Footer() {
     <img
       src="/images/new-logo.png"
       alt="Aristocrat 3D Printing Logo"
-      className="h-16 w-auto object-contain"
+      className="w-44 sm:w-52 h-auto object-contain"
     />
   </div>
 </div>

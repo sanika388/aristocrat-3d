@@ -36,7 +36,7 @@ export default function Navbar() {
     <img
       src="/images/new-logo.png"
       alt="Aristocrat 3D Printing Logo"
-      className="h-12 md:h-16 w-auto object-contain"
+      className="w-36 sm:w-44 md:w-52 h-auto object-contain"
     />
   </div>
 </Link>
