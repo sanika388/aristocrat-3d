@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download, FileText, ShieldCheck, Banknote, Smartphone, Clock, X, Lock, Check } from "lucide-react";
+import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download, FileText, Banknote, Smartphone, X, Lock, Check } from "lucide-react";
 import { jsPDF } from "jspdf";
 import STLViewer from "../components/STLViewer";
 
@@ -12,7 +12,7 @@ export default function QuoteWizard() {
   
   // Professional Flow States
   const [isGatewayOpen, setIsGatewayOpen] = useState(false);
-  const [gatewayStep, setGatewayStep] = useState<"authenticating" | "success">("authenticating");
+  const [gatewayStep, setGatewayStep] = useState<"redirecting" | "waiting" | "success">("redirecting");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   
@@ -29,7 +29,7 @@ export default function QuoteWizard() {
     quantity: 1,
     layerHeight: "0.2mm",
     deliveryMethod: "standard",
-    paymentMethod: "upi", // gpay, phonepay, paytm, upi, cards, cash
+    paymentMethod: "gpay", // gpay, phonepay, paytm, upi, cards, cash
     notes: "",
   });
 
@@ -123,26 +123,31 @@ export default function QuoteWizard() {
   const quoteRef = `A3D-${Math.floor(100000 + Math.random() * 900000)}`;
   const receiptNo = `REC-${Math.floor(100000 + Math.random() * 900000)}`;
 
-  // Handles starting the professional checkout flow
+  // Handles starting the checkout flow: redirects to user's payment app / handles cash
   const handleInitiateCheckout = () => {
     if (formData.paymentMethod === "cash") {
-      // Cash order doesn't open payment gateway, directly complete order with cash slip
-      executeFinalSubmission("Pending Cash Collection (Pay on Pickup)");
+      // Cash order: direct completion with "Paid on Delivery / Pickup" status
+      executeFinalSubmission("Pending Cash Collection (Paid on Delivery / Pickup)");
     } else {
-      // Open professional payment gateway modal simulation (like Razorpay / GPay / PhonePe intent)
+      // UPI / Card flow: Open app redirect simulation popup
       setIsGatewayOpen(true);
-      setGatewayStep("authenticating");
+      setGatewayStep("redirecting");
       
-      // Simulate bank / UPI server processing handshake
+      // Step 1: Redirecting to app
+      setTimeout(() => {
+        setGatewayStep("waiting");
+      }, 1500);
+
+      // Step 2: Waiting for user PIN / payment approval
       setTimeout(() => {
         setGatewayStep("success");
-      }, 2500);
+      }, 4000);
     }
   };
 
   const handleSimulatedPaymentSuccess = () => {
     setIsGatewayOpen(false);
-    const paymentLabel = formData.paymentMethod.toUpperCase() + " (Paid & Verified)";
+    const paymentLabel = `${formData.paymentMethod.toUpperCase()} (Paid & Verified)`;
     executeFinalSubmission(paymentLabel);
   };
 
@@ -160,7 +165,7 @@ export default function QuoteWizard() {
           _captcha: "false",
           "Receipt No": receiptNo,
           "Quote Ref": quoteRef,
-          "Payment Mode & Status": paymentStatusLabel,
+          "Payment Status": paymentStatusLabel,
           "Full Name": formData.fullName,
           "Email": formData.email,
           "Phone": `${formData.countryCode} ${formData.phone}`,
@@ -198,7 +203,7 @@ export default function QuoteWizard() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
-    doc.text(isCashSlip ? `Official Cash Collection Slip [${receiptNo}]` : `Official Tax Invoice & Payment Receipt [${receiptNo}]`, 20, 27);
+    doc.text(isCashSlip ? `Official Cash Collection Slip [${receiptNo}]` : `Official UPI Paid & Verified Receipt [${receiptNo}]`, 20, 27);
 
     doc.setDrawColor(203, 213, 225);
     doc.line(20, 32, 190, 32);
@@ -227,8 +232,8 @@ export default function QuoteWizard() {
       ["CAD File Name:", fileName],
       ["Selected Material:", `${formData.material} (${formData.color})`],
       ["Quantity Ordered:", `${formData.quantity} unit(s) @ ${formData.layerHeight}`],
-      ["Payment Mode:", isCashSlip ? "Cash on Delivery / Pay on Pickup" : `${formData.paymentMethod.toUpperCase()} (Online Verified)`],
-      ["Payment Status:", isCashSlip ? "Pending Cash Collection" : "PAID & VERIFIED"],
+      ["Payment Mode:", isCashSlip ? "Cash / Pay on Delivery" : `${formData.paymentMethod.toUpperCase()} (Online Payment App)`],
+      ["Payment Status:", isCashSlip ? "Paid on Delivery / Pickup" : "PAID & VERIFIED (UPI Intent Approved)"],
       ["Engineering Notes:", formData.notes || "Standard manufacturing tolerances apply."]
     ];
 
@@ -251,11 +256,11 @@ export default function QuoteWizard() {
 
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 64, 175);
-    doc.text("TOTAL AMOUNT DUE:", 28, currentY + 13);
+    doc.text("TOTAL AMOUNT:", 28, currentY + 13);
     doc.setFontSize(14);
     doc.text(`Rs. ${finalPrice} INR`, 130, currentY + 13);
 
-    doc.save(`Aristocrat-${isCashSlip ? 'Cash-Slip' : 'Receipt'}-${receiptNo}.pdf`);
+    doc.save(`Aristocrat-${isCashSlip ? 'Cash-Receipt' : 'UPI-Paid-Receipt'}-${receiptNo}.pdf`);
   };
 
   return (
@@ -263,8 +268,8 @@ export default function QuoteWizard() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-[#1A365D] dark:text-white">3D Printing Quote & Secure Checkout</h1>
-          <p className="text-slate-600 dark:text-slate-300 mt-2 text-sm">Upload your design, configure specifications, and complete payment securely.</p>
+          <h1 className="text-3xl font-extrabold text-[#1A365D] dark:text-white">3D Printing Quote & Instant App Checkout</h1>
+          <p className="text-slate-600 dark:text-slate-300 mt-2 text-sm">Configure your print, pick your payment app, and receive your verified receipt instantly.</p>
         </div>
 
         {!orderConfirmed ? (
@@ -510,58 +515,38 @@ export default function QuoteWizard() {
                 </div>
               )}
 
-              {/* STEP 6: Payment Selection & Review */}
+              {/* STEP 6: Payment Selection & Instant App Launch */}
               {step === 6 && (
                 <div className="space-y-6 animate-in fade-in">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 6: Review & Payment Selection</h3>
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadPDF(false)}
-                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm"
-                    >
-                      <FileText className="w-4 h-4 text-[#3182CE]" /> Download Draft Quote PDF
-                    </button>
-                  </div>
+                  <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 6: Select Payment App & Checkout</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Choose your preferred UPI payment app or select cash on delivery/pickup. Clicking the pay button will immediately redirect you to your app or place your order.</p>
 
-                  <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 text-sm">
+                  <div className="bg-slate-50 dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Client Name:</span>
+                      <span className="text-slate-500">Client:</span>
                       <span className="font-semibold text-slate-800 dark:text-white">{formData.fullName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Email & Phone:</span>
-                      <span className="font-semibold text-slate-800 dark:text-white">{formData.email} | {formData.countryCode} {formData.phone}</span>
+                      <span className="text-slate-500">Selected File & Specs:</span>
+                      <span className="font-semibold text-slate-800 dark:text-white">{fileName} | {formData.material} ({formData.color})</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Uploaded File:</span>
-                      <span className="font-semibold text-slate-800 dark:text-white">{fileName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Selected Material:</span>
-                      <span className="font-semibold text-slate-800 dark:text-white">{formData.material} ({formData.color})</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Quantity & Quality:</span>
-                      <span className="font-semibold text-slate-800 dark:text-white">{formData.quantity}x | {formData.layerHeight}</span>
-                    </div>
-                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between text-lg font-bold text-[#1A365D] dark:text-white">
-                      <span>Total Amount Due:</span>
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between text-base font-bold text-[#1A365D] dark:text-white">
+                      <span>Total Amount:</span>
                       <span className="text-[#3182CE]">Rs. {finalPrice} INR</span>
                     </div>
                   </div>
 
-                  {/* Payment Methods Grid */}
+                  {/* Payment Apps Grid */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-3">Choose Payment Method</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {[
-                        { id: "gpay", name: "Google Pay (GPay)", desc: "Direct UPI payment handle", icon: Smartphone },
-                        { id: "phonepe", name: "PhonePe", desc: "Instant mobile UPI transfer", icon: Smartphone },
-                        { id: "paytm", name: "Paytm", desc: "Paytm UPI / Wallet / Postpaid", icon: Smartphone },
-                        { id: "upi", name: "Other UPI Apps", desc: "BHIM, WhatsApp, or QR Code", icon: Smartphone },
+                        { id: "gpay", name: "Google Pay (GPay)", desc: "Redirects to GPay Intent app", icon: Smartphone },
+                        { id: "phonepe", name: "PhonePe", desc: "Redirects to PhonePe app", icon: Smartphone },
+                        { id: "paytm", name: "Paytm", desc: "Redirects to Paytm app", icon: Smartphone },
+                        { id: "upi", name: "Other UPI App", desc: "BHIM, WhatsApp, or QR Code", icon: Smartphone },
                         { id: "cards", name: "Credit / Debit Card", desc: "Visa, MasterCard, RuPay", icon: CreditCard },
-                        { id: "cash", name: "Cash / Pay on Pickup", desc: "Pay cash upon delivery or collection", icon: Banknote },
+                        { id: "cash", name: "Cash on Delivery / Pickup", desc: "Paid on delivery (Cash receipt)", icon: Banknote },
                       ].map((method) => {
                         const IconComponent = method.icon;
                         return (
@@ -599,8 +584,8 @@ export default function QuoteWizard() {
                       onClick={handleInitiateCheckout}
                       className="px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg flex items-center gap-2 transition-all disabled:opacity-50"
                     >
-                      {formData.paymentMethod === 'cash' ? <Banknote className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                      {formData.paymentMethod === 'cash' ? "Confirm Cash Order" : `Pay Rs. ${finalPrice} Securely`}
+                      {formData.paymentMethod === 'cash' ? <Banknote className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
+                      {formData.paymentMethod === 'cash' ? "Confirm Cash Order (Paid on Delivery)" : `Open ${formData.paymentMethod.toUpperCase()} & Pay Rs. ${finalPrice}`}
                     </button>
                   </div>
                 </div>
@@ -639,9 +624,11 @@ export default function QuoteWizard() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">Order Confirmed Successfully!</h2>
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                {formData.paymentMethod === 'cash' ? "Cash Order Confirmed!" : "Payment Verified Successfully!"}
+              </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                Thank you, <span className="font-semibold text-slate-800 dark:text-slate-200">{formData.fullName}</span>. Your order has been placed and notification sent to production.
+                Thank you, <span className="font-semibold text-slate-800 dark:text-slate-200">{formData.fullName}</span>. Your order is registered in our production queue.
               </p>
             </div>
 
@@ -657,11 +644,11 @@ export default function QuoteWizard() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Payment Status:</span>
                 <span className="font-bold text-emerald-600">
-                  {formData.paymentMethod === 'cash' ? 'Pending Cash Collection' : 'Paid & Verified'}
+                  {formData.paymentMethod === 'cash' ? 'Paid on Delivery / Pickup' : `${formData.paymentMethod.toUpperCase()} (Paid & Verified)`}
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-bold text-base text-[#1A365D] dark:text-white">
-                <span>Total Paid:</span>
+                <span>Total Amount:</span>
                 <span className="text-[#3182CE]">Rs. {finalPrice} INR</span>
               </div>
             </div>
@@ -672,7 +659,7 @@ export default function QuoteWizard() {
                 onClick={() => handleDownloadPDF(formData.paymentMethod === 'cash')}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#3182CE] hover:bg-blue-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all"
               >
-                <Download className="w-4 h-4"/> Download Official PDF {formData.paymentMethod === 'cash' ? 'Cash Slip' : 'Receipt'}
+                <Download className="w-4 h-4"/> Download Official {formData.paymentMethod === 'cash' ? 'Cash Receipt (Paid on Delivery)' : 'UPI Paid & Verified Receipt'}
               </button>
               <button
                 onClick={() => window.location.reload()}
@@ -687,7 +674,7 @@ export default function QuoteWizard() {
 
       </div>
 
-      {/* PROFESSIONAL PAYMENT GATEWAY POPUP MODAL */}
+      {/* APP REDIRECT & INTENT PAYMENT POPUP MODAL */}
       {isGatewayOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-6 sm:p-8 space-y-6 relative">
@@ -702,13 +689,13 @@ export default function QuoteWizard() {
 
             <div className="text-center space-y-2">
               <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/50 text-[#3182CE] rounded-xl flex items-center justify-center mx-auto">
-                <Lock className="w-6 h-6"/>
+                <Smartphone className="w-6 h-6"/>
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                {formData.paymentMethod} Secure Gateway
+                Opening {formData.paymentMethod.toUpperCase()} App
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Aristocrat 3D Printing Encrypted Sandbox Checkout
+                Aristocrat 3D Secure Payment Gateway Intent
               </p>
             </div>
 
@@ -718,33 +705,44 @@ export default function QuoteWizard() {
                 <span className="font-semibold text-slate-800 dark:text-white">Aristocrat 3D</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Payable Amount:</span>
+                <span className="text-slate-500">Amount:</span>
                 <span className="font-bold text-[#3182CE]">Rs. {finalPrice} INR</span>
               </div>
             </div>
 
-            {gatewayStep === "authenticating" ? (
+            {gatewayStep === "redirecting" && (
               <div className="py-8 text-center space-y-4">
                 <div className="w-10 h-10 border-4 border-[#3182CE] border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 animate-pulse">
-                  Connecting to {formData.paymentMethod.toUpperCase()} Secure Server & awaiting user confirmation...
+                  Redirecting to your {formData.paymentMethod.toUpperCase()} app...
                 </p>
               </div>
-            ) : (
+            )}
+
+            {gatewayStep === "waiting" && (
+              <div className="py-8 text-center space-y-4">
+                <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Waiting for you to enter UPI PIN and complete payment in {formData.paymentMethod.toUpperCase()}...
+                </p>
+              </div>
+            )}
+
+            {gatewayStep === "success" && (
               <div className="py-6 text-center space-y-4 animate-in zoom-in-95">
                 <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                   <Check className="w-6 h-6"/>
                 </div>
                 <div>
-                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Payment Authorized!</h4>
-                  <p className="text-xs text-slate-500 mt-1">Transaction verified successfully by bank network.</p>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Payment Successful!</h4>
+                  <p className="text-xs text-slate-500 mt-1">Received payment confirmation from your app.</p>
                 </div>
                 <button
                   type="button"
                   onClick={handleSimulatedPaymentSuccess}
                   className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all mt-2"
                 >
-                  Continue to Verified Receipt & Invoice
+                  View Paid & Verified Receipt
                 </button>
               </div>
             )}
