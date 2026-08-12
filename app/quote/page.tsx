@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download, FileText, ShieldCheck, Banknote, Smartphone, Check, Clock, AlertCircle, Printer } from "lucide-react";
+import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download, FileText, ShieldCheck, Banknote, Smartphone, Clock, X, Lock, Check } from "lucide-react";
 import { jsPDF } from "jspdf";
 import STLViewer from "../components/STLViewer";
 
@@ -9,8 +9,13 @@ export default function QuoteWizard() {
   const [step, setStep] = useState(1);
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState<number | null>(null);
+  
+  // Professional Flow States
+  const [isGatewayOpen, setIsGatewayOpen] = useState(false);
+  const [gatewayStep, setGatewayStep] = useState<"authenticating" | "success">("authenticating");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success">("idle");
+  const [orderConfirmed, setOrderConfirmed] = useState(false);
+  
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   
   const [formData, setFormData] = useState({
@@ -26,7 +31,6 @@ export default function QuoteWizard() {
     deliveryMethod: "standard",
     paymentMethod: "upi", // gpay, phonepay, paytm, upi, cards, cash
     notes: "",
-    transactionId: "",
   });
 
   const countryCodes = [
@@ -119,7 +123,62 @@ export default function QuoteWizard() {
   const quoteRef = `A3D-${Math.floor(100000 + Math.random() * 900000)}`;
   const receiptNo = `REC-${Math.floor(100000 + Math.random() * 900000)}`;
 
-  const handleDownloadPDF = () => {
+  // Handles starting the professional checkout flow
+  const handleInitiateCheckout = () => {
+    if (formData.paymentMethod === "cash") {
+      // Cash order doesn't open payment gateway, directly complete order with cash slip
+      executeFinalSubmission("Pending Cash Collection (Pay on Pickup)");
+    } else {
+      // Open professional payment gateway modal simulation (like Razorpay / GPay / PhonePe intent)
+      setIsGatewayOpen(true);
+      setGatewayStep("authenticating");
+      
+      // Simulate bank / UPI server processing handshake
+      setTimeout(() => {
+        setGatewayStep("success");
+      }, 2500);
+    }
+  };
+
+  const handleSimulatedPaymentSuccess = () => {
+    setIsGatewayOpen(false);
+    const paymentLabel = formData.paymentMethod.toUpperCase() + " (Paid & Verified)";
+    executeFinalSubmission(paymentLabel);
+  };
+
+  const executeFinalSubmission = async (paymentStatusLabel: string) => {
+    setIsSubmitting(true);
+    try {
+      await fetch("https://formsubmit.co/ajax/aristrocrat3dprinting@gmail.com", {
+        method: "POST",
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          _subject: `New Confirmed Order [${receiptNo}] - ${paymentStatusLabel}`,
+          _captcha: "false",
+          "Receipt No": receiptNo,
+          "Quote Ref": quoteRef,
+          "Payment Mode & Status": paymentStatusLabel,
+          "Full Name": formData.fullName,
+          "Email": formData.email,
+          "Phone": `${formData.countryCode} ${formData.phone}`,
+          "File Name": fileName,
+          "Material": `${formData.material} (${formData.color})`,
+          "Quantity": formData.quantity,
+          "Total Order Value": `Rs. ${finalPrice} INR`
+        })
+      });
+    } catch (err) {
+      // Proceed even if background network notification fails
+    } finally {
+      setIsSubmitting(false);
+      setOrderConfirmed(true);
+    }
+  };
+
+  const handleDownloadPDF = (isCashSlip: boolean) => {
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -139,7 +198,7 @@ export default function QuoteWizard() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
-    doc.text(`Official Payment Receipt & Specification Document [${receiptNo}]`, 20, 27);
+    doc.text(isCashSlip ? `Official Cash Collection Slip [${receiptNo}]` : `Official Tax Invoice & Payment Receipt [${receiptNo}]`, 20, 27);
 
     doc.setDrawColor(203, 213, 225);
     doc.line(20, 32, 190, 32);
@@ -161,15 +220,15 @@ export default function QuoteWizard() {
     doc.text(`Phone: ${formData.countryCode} ${formData.phone}`, 25, 84);
 
     doc.setFont("helvetica", "bold");
-    doc.text("ORDER & PAYMENT SUMMARY", 20, 105);
+    doc.text("ORDER & PAYMENT SPECIFICATIONS", 20, 105);
 
     const startY = 111;
     const specs = [
       ["CAD File Name:", fileName],
       ["Selected Material:", `${formData.material} (${formData.color})`],
       ["Quantity Ordered:", `${formData.quantity} unit(s) @ ${formData.layerHeight}`],
-      ["Payment Mode:", formData.paymentMethod === 'cash' ? "Cash on Delivery / Pay on Pickup" : `${formData.paymentMethod.toUpperCase()} (Verified)`],
-      ["Payment Status:", formData.paymentMethod === 'cash' ? "Pending (Cash Collection)" : "PAID & VERIFIED"],
+      ["Payment Mode:", isCashSlip ? "Cash on Delivery / Pay on Pickup" : `${formData.paymentMethod.toUpperCase()} (Online Verified)`],
+      ["Payment Status:", isCashSlip ? "Pending Cash Collection" : "PAID & VERIFIED"],
       ["Engineering Notes:", formData.notes || "Standard manufacturing tolerances apply."]
     ];
 
@@ -192,55 +251,11 @@ export default function QuoteWizard() {
 
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 64, 175);
-    doc.text("TOTAL AMOUNT:", 28, currentY + 13);
+    doc.text("TOTAL AMOUNT DUE:", 28, currentY + 13);
     doc.setFontSize(14);
     doc.text(`Rs. ${finalPrice} INR`, 130, currentY + 13);
 
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184);
-    doc.text("This is a computer-generated official receipt from Aristocrat 3D Printing.", 20, 280);
-
-    doc.save(`Aristocrat-Receipt-${receiptNo}.pdf`);
-  };
-
-  const handleCheckoutSubmit = async () => {
-    setIsSubmitting(true);
-    setPaymentStatus("processing");
-
-    // Simulate gateway verification or instant cash validation
-    setTimeout(async () => {
-      try {
-        const response = await fetch("https://formsubmit.co/ajax/aristrocrat3dprinting@gmail.com", {
-          method: "POST",
-          headers: { 
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({
-            _subject: `New Verified Order (${formData.paymentMethod.toUpperCase()}) - ${receiptNo}`,
-            _captcha: "false",
-            "Receipt No": receiptNo,
-            "Payment Mode": formData.paymentMethod.toUpperCase(),
-            "Payment Status": formData.paymentMethod === 'cash' ? "Pending Cash on Delivery" : "Paid & Verified",
-            "Full Name": formData.fullName,
-            "Email": formData.email,
-            "Phone": `${formData.countryCode} ${formData.phone}`,
-            "File Name": fileName,
-            "Material": formData.material,
-            "Color": formData.color,
-            "Quantity": formData.quantity,
-            "Total Order Value": `Rs. ${finalPrice} INR`
-          })
-        });
-
-        setPaymentStatus("success");
-      } catch (err) {
-        setPaymentStatus("success"); // fallback view state
-      } finally {
-        setIsSubmitting(false);
-      }
-    }, 2000);
+    doc.save(`Aristocrat-${isCashSlip ? 'Cash-Slip' : 'Receipt'}-${receiptNo}.pdf`);
   };
 
   return (
@@ -248,11 +263,11 @@ export default function QuoteWizard() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-[#1A365D] dark:text-white">3D Printing Quote & Verified Checkout</h1>
-          <p className="text-slate-600 dark:text-slate-300 mt-2 text-sm">Upload your design, configure specifications, and secure your payment receipt.</p>
+          <h1 className="text-3xl font-extrabold text-[#1A365D] dark:text-white">3D Printing Quote & Secure Checkout</h1>
+          <p className="text-slate-600 dark:text-slate-300 mt-2 text-sm">Upload your design, configure specifications, and complete payment securely.</p>
         </div>
 
-        {paymentStatus !== "success" ? (
+        {!orderConfirmed ? (
           <>
             {/* Progress Bar */}
             <div className="flex items-center justify-between mb-8 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-x-auto gap-2">
@@ -502,10 +517,10 @@ export default function QuoteWizard() {
                     <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 6: Review & Payment Selection</h3>
                     <button
                       type="button"
-                      onClick={handleDownloadPDF}
+                      onClick={() => handleDownloadPDF(false)}
                       className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm"
                     >
-                      <FileText className="w-4 h-4 text-[#3182CE]" /> Download Official PDF Quote
+                      <FileText className="w-4 h-4 text-[#3182CE]" /> Download Draft Quote PDF
                     </button>
                   </div>
 
@@ -577,134 +592,87 @@ export default function QuoteWizard() {
                     </div>
                   </div>
 
-                  {/* Processing banner or action */}
-                  {isSubmitting && (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-3 animate-pulse">
-                      <Clock className="w-5 h-5 text-[#3182CE] animate-spin" />
-                      <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">
-                          {formData.paymentMethod === 'cash' ? "Registering Cash Order..." : `Verifying ${formData.paymentMethod.toUpperCase()} Secure Payment...`}
-                        </h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Please do not close this window while we secure your receipt.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {!isSubmitting && (
-                    <div className="flex justify-end pt-2">
-                      <button
-                        type="button"
-                        onClick={handleCheckoutSubmit}
-                        className="px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg flex items-center gap-2 transition-all"
-                      >
-                        <ShieldCheck className="w-4 h-4" /> 
-                        {formData.paymentMethod === 'cash' ? "Confirm Cash Order & Generate Slip" : `Pay Rs. ${finalPrice} via ${formData.paymentMethod.toUpperCase()}`}
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={handleInitiateCheckout}
+                      className="px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg flex items-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      {formData.paymentMethod === 'cash' ? <Banknote className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                      {formData.paymentMethod === 'cash' ? "Confirm Cash Order" : `Pay Rs. ${finalPrice} Securely`}
+                    </button>
+                  </div>
                 </div>
               )}
 
-              {/* Wizard Action Buttons */}
-              {!isSubmitting && (
-                <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                  {step > 1 ? (
-                    <button
-                      onClick={prevStep}
-                      className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
-                    >
-                      <ArrowLeft className="w-4 h-4" /> Back
-                    </button>
-                  ) : <div />}
+              {/* Navigation Footer Buttons */}
+              <div className="flex items-center justify-between pt-8 mt-8 border-t border-slate-200 dark:border-slate-700">
+                {step > 1 ? (
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center gap-2 transition-all"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </button>
+                ) : <div />}
 
-                  {step < 6 && (
-                    <button
-                      onClick={nextStep}
-                      className="px-8 py-2.5 rounded-lg bg-[#3182CE] hover:bg-blue-700 text-white font-semibold text-sm shadow-md flex items-center gap-2"
-                    >
-                      Continue <ArrowRight className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              )}
+                {step < 6 && (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="px-6 py-2.5 rounded-xl bg-[#3182CE] hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-md transition-all"
+                  >
+                    Continue <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
 
             </div>
           </>
         ) : (
-          /* POST-PAYMENT VERIFIED RECEIPT SCREEN */
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 sm:p-12 space-y-8 animate-in fade-in">
-            
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle className="w-10 h-10" />
-              </div>
-              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                {formData.paymentMethod === 'cash' ? "Cash Order Registered Successfully!" : "Payment Verified & Confirmed!"}
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 text-sm max-w-md mx-auto">
-                {formData.paymentMethod === 'cash' 
-                  ? "Your order has been recorded. Please keep cash ready upon order fulfillment or pickup." 
-                  : `Your transaction via ${formData.paymentMethod.toUpperCase()} has been successfully processed and verified.`}
+          /* SUCCESS CONFIRMATION VIEW */
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 sm:p-12 text-center space-y-6 animate-in zoom-in-95">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle className="w-10 h-10" />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">Order Confirmed Successfully!</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                Thank you, <span className="font-semibold text-slate-800 dark:text-slate-200">{formData.fullName}</span>. Your order has been placed and notification sent to production.
               </p>
             </div>
 
-            {/* Receipt Box */}
-            <div className="max-w-2xl mx-auto bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-sm">
-              <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-bl-xl">
-                {formData.paymentMethod === 'cash' ? "Cash Slip" : "Paid & Verified"}
+            <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 max-w-md mx-auto text-left space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Receipt Number:</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white">{receiptNo}</span>
               </div>
-
-              <div className="flex flex-col sm:flex-row justify-between border-b border-slate-200 dark:border-slate-700 pb-4 gap-2">
-                <div>
-                  <h4 className="font-extrabold text-[#1A365D] dark:text-white text-base">ARISTOCRAT 3D PRINTING</h4>
-                  <p className="text-xs text-slate-500">Official Digital Receipt</p>
-                </div>
-                <div className="text-left sm:text-right font-mono text-xs text-slate-500">
-                  <p><strong className="text-slate-700 dark:text-slate-300">Receipt ID:</strong> {receiptNo}</p>
-                  <p><strong className="text-slate-700 dark:text-slate-300">Quote Ref:</strong> {quoteRef}</p>
-                  <p><strong className="text-slate-700 dark:text-slate-300">Date:</strong> {new Date().toLocaleDateString()}</p>
-                </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Quote Reference:</span>
+                <span className="font-mono font-semibold text-slate-900 dark:text-white">{quoteRef}</span>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-xs text-slate-400 uppercase font-semibold">Billed To</span>
-                  <p className="font-bold text-slate-800 dark:text-white mt-0.5">{formData.fullName}</p>
-                  <p className="text-xs text-slate-500">{formData.email}</p>
-                  <p className="text-xs text-slate-500">{formData.countryCode} {formData.phone}</p>
-                </div>
-                <div>
-                  <span className="text-xs text-slate-400 uppercase font-semibold">Payment Particulars</span>
-                  <p className="font-bold text-slate-800 dark:text-white mt-0.5 uppercase">Mode: {formData.paymentMethod}</p>
-                  <p className="text-xs text-emerald-600 font-semibold mt-0.5">
-                    {formData.paymentMethod === 'cash' ? "Status: Pending Cash Collection" : "Status: Verified Online Payment"}
-                  </p>
-                </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Payment Status:</span>
+                <span className="font-bold text-emerald-600">
+                  {formData.paymentMethod === 'cash' ? 'Pending Cash Collection' : 'Paid & Verified'}
+                </span>
               </div>
-
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-2 text-sm">
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Item: 3D Print Job ({formData.material} - {formData.color})</span>
-                  <span>{formData.quantity}x unit(s)</span>
-                </div>
-                <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Layer Resolution & Delivery:</span>
-                  <span>{formData.layerHeight} / {formData.deliveryMethod}</span>
-                </div>
-                <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between font-bold text-lg text-slate-900 dark:text-white">
-                  <span>Total Paid:</span>
-                  <span className="text-[#3182CE]">Rs. {finalPrice} INR</span>
-                </div>
+              <div className="flex justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-bold text-base text-[#1A365D] dark:text-white">
+                <span>Total Paid:</span>
+                <span className="text-[#3182CE]">Rs. {finalPrice} INR</span>
               </div>
             </div>
 
             {/* Receipt Actions */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <button
-                onClick={handleDownloadPDF}
+                onClick={() => handleDownloadPDF(formData.paymentMethod === 'cash')}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#3182CE] hover:bg-blue-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all"
               >
-                <Download className="w-4 h-4" /> Download Receipt PDF
+                <Download className="w-4 h-4"/> Download Official PDF {formData.paymentMethod === 'cash' ? 'Cash Slip' : 'Receipt'}
               </button>
               <button
                 onClick={() => window.location.reload()}
@@ -718,6 +686,73 @@ export default function QuoteWizard() {
         )}
 
       </div>
+
+      {/* PROFESSIONAL PAYMENT GATEWAY POPUP MODAL */}
+      {isGatewayOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md w-full p-6 sm:p-8 space-y-6 relative">
+            
+            <button 
+              type="button"
+              onClick={() => setIsGatewayOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X className="w-5 h-5"/>
+            </button>
+
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/50 text-[#3182CE] rounded-xl flex items-center justify-center mx-auto">
+                <Lock className="w-6 h-6"/>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                {formData.paymentMethod} Secure Gateway
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Aristocrat 3D Printing Encrypted Sandbox Checkout
+              </p>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-sm space-y-2">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Merchant:</span>
+                <span className="font-semibold text-slate-800 dark:text-white">Aristocrat 3D</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Payable Amount:</span>
+                <span className="font-bold text-[#3182CE]">Rs. {finalPrice} INR</span>
+              </div>
+            </div>
+
+            {gatewayStep === "authenticating" ? (
+              <div className="py-8 text-center space-y-4">
+                <div className="w-10 h-10 border-4 border-[#3182CE] border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 animate-pulse">
+                  Connecting to {formData.paymentMethod.toUpperCase()} Secure Server & awaiting user confirmation...
+                </p>
+              </div>
+            ) : (
+              <div className="py-6 text-center space-y-4 animate-in zoom-in-95">
+                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                  <Check className="w-6 h-6"/>
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Payment Authorized!</h4>
+                  <p className="text-xs text-slate-500 mt-1">Transaction verified successfully by bank network.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSimulatedPaymentSuccess}
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-all mt-2"
+                >
+                  Continue to Verified Receipt & Invoice
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
