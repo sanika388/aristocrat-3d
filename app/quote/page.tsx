@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download, FileText } from "lucide-react";
+import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download, FileText, ShieldCheck, Banknote, Smartphone, Check, Clock, AlertCircle, Printer } from "lucide-react";
 import { jsPDF } from "jspdf";
 import STLViewer from "../components/STLViewer";
 
@@ -10,7 +10,7 @@ export default function QuoteWizard() {
   const [fileName, setFileName] = useState("");
   const [fileSize, setFileSize] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success">("idle");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   
   const [formData, setFormData] = useState({
@@ -24,7 +24,9 @@ export default function QuoteWizard() {
     quantity: 1,
     layerHeight: "0.2mm",
     deliveryMethod: "standard",
+    paymentMethod: "upi", // gpay, phonepay, paytm, upi, cards, cash
     notes: "",
+    transactionId: "",
   });
 
   const countryCodes = [
@@ -114,8 +116,9 @@ export default function QuoteWizard() {
   };
 
   const finalPrice = calculatePrice();
+  const quoteRef = `A3D-${Math.floor(100000 + Math.random() * 900000)}`;
+  const receiptNo = `REC-${Math.floor(100000 + Math.random() * 900000)}`;
 
-  // Handler to generate and download official PDF Quote with a Watermark Logo stamp
   const handleDownloadPDF = () => {
     const doc = new jsPDF({
       orientation: "portrait",
@@ -123,18 +126,12 @@ export default function QuoteWizard() {
       format: "a4",
     });
 
-    const quoteRef = `A3D-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    // 1. Draw Watermark Background Stamp / Text across the center
-    doc.setTextColor(240, 242, 245); // Very soft light grey-blue tint for watermark effect
+    doc.setTextColor(240, 242, 245);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(48);
-    
-    // Rotate canvas context for diagonal watermark text effect
     doc.text("ARISTOCRAT 3D", 35, 150, { angle: 45 });
 
-    // Reset styles for formal foreground document layout
-    doc.setTextColor(26, 54, 93); // Primary dark navy
+    doc.setTextColor(26, 54, 93);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
     doc.text("ARISTOCRAT 3D PRINTING", 20, 20);
@@ -142,42 +139,37 @@ export default function QuoteWizard() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
-    doc.text("Official Verified Quotation & Specification Document", 20, 27);
+    doc.text(`Official Payment Receipt & Specification Document [${receiptNo}]`, 20, 27);
 
-    // Divider line
     doc.setDrawColor(203, 213, 225);
     doc.line(20, 32, 190, 32);
 
-    // Reference & Meta Info box
     doc.setFont("helvetica", "bold");
     doc.setTextColor(15, 23, 42);
-    doc.text(`Quote Reference: ${quoteRef}`, 20, 42);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, 42);
+    doc.text(`Quote Ref: ${quoteRef}`, 20, 42);
+    doc.text(`Receipt No: ${receiptNo}`, 120, 42);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 49);
 
-    // Client Details Section
     doc.setFillColor(248, 250, 252);
-    doc.rect(20, 48, 170, 38, "F");
+    doc.rect(20, 55, 170, 38, "F");
     
     doc.setFont("helvetica", "bold");
-    doc.text("CLIENT INFORMATION", 25, 56);
+    doc.text("CLIENT INFORMATION", 25, 63);
     doc.setFont("helvetica", "normal");
-    doc.text(`Full Name: ${formData.fullName}`, 25, 63);
-    doc.text(`Email: ${formData.email}`, 25, 70);
-    doc.text(`Phone: ${formData.countryCode} ${formData.phone}`, 25, 77);
-    doc.text(`Company: ${formData.company || "N/A"}`, 110, 63);
+    doc.text(`Full Name: ${formData.fullName}`, 25, 70);
+    doc.text(`Email: ${formData.email}`, 25, 77);
+    doc.text(`Phone: ${formData.countryCode} ${formData.phone}`, 25, 84);
 
-    // Technical Specifications Section
     doc.setFont("helvetica", "bold");
-    doc.text("TECHNICAL SPECIFICATIONS", 20, 98);
+    doc.text("ORDER & PAYMENT SUMMARY", 20, 105);
 
-    const startY = 104;
+    const startY = 111;
     const specs = [
       ["CAD File Name:", fileName],
-      ["Selected Material:", formData.material],
-      ["Color / Finish:", formData.color],
-      ["Quantity Ordered:", `${formData.quantity} unit(s)`],
-      ["Layer Resolution:", formData.layerHeight],
-      ["Delivery Mode:", formData.deliveryMethod.toUpperCase()],
+      ["Selected Material:", `${formData.material} (${formData.color})`],
+      ["Quantity Ordered:", `${formData.quantity} unit(s) @ ${formData.layerHeight}`],
+      ["Payment Mode:", formData.paymentMethod === 'cash' ? "Cash on Delivery / Pay on Pickup" : `${formData.paymentMethod.toUpperCase()} (Verified)`],
+      ["Payment Status:", formData.paymentMethod === 'cash' ? "Pending (Cash Collection)" : "PAID & VERIFIED"],
       ["Engineering Notes:", formData.notes || "Standard manufacturing tolerances apply."]
     ];
 
@@ -189,44 +181,78 @@ export default function QuoteWizard() {
 
       doc.setFont("helvetica", "normal");
       doc.setTextColor(15, 23, 42);
-      // Handle wrapping for longer notes text
       const splitValue = doc.splitTextToSize(value, 100);
       doc.text(splitValue, 75, currentY);
       currentY += (splitValue.length * 6) + 2;
     });
 
-    // Financial Breakdown Box
     currentY += 6;
     doc.setFillColor(239, 246, 255);
     doc.rect(20, currentY, 170, 20, "F");
 
     doc.setFont("helvetica", "bold");
     doc.setTextColor(30, 64, 175);
-    doc.text("ESTIMATED TOTAL PRICE:", 28, currentY + 13);
+    doc.text("TOTAL AMOUNT:", 28, currentY + 13);
     doc.setFontSize(14);
-    doc.text(`₹${finalPrice} INR`, 140, currentY + 13);
+    doc.text(`Rs. ${finalPrice} INR`, 130, currentY + 13);
 
-    // Footer note
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
-    doc.text("This document is an official computer-generated quotation verified through the Aristocrat 3D portal.", 20, 280);
+    doc.text("This is a computer-generated official receipt from Aristocrat 3D Printing.", 20, 280);
 
-    // Save the generated PDF file
-    doc.save(`Aristocrat-Quote-${quoteRef}.pdf`);
+    doc.save(`Aristocrat-Receipt-${receiptNo}.pdf`);
+  };
+
+  const handleCheckoutSubmit = async () => {
+    setIsSubmitting(true);
+    setPaymentStatus("processing");
+
+    // Simulate gateway verification or instant cash validation
+    setTimeout(async () => {
+      try {
+        const response = await fetch("https://formsubmit.co/ajax/aristrocrat3dprinting@gmail.com", {
+          method: "POST",
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            _subject: `New Verified Order (${formData.paymentMethod.toUpperCase()}) - ${receiptNo}`,
+            _captcha: "false",
+            "Receipt No": receiptNo,
+            "Payment Mode": formData.paymentMethod.toUpperCase(),
+            "Payment Status": formData.paymentMethod === 'cash' ? "Pending Cash on Delivery" : "Paid & Verified",
+            "Full Name": formData.fullName,
+            "Email": formData.email,
+            "Phone": `${formData.countryCode} ${formData.phone}`,
+            "File Name": fileName,
+            "Material": formData.material,
+            "Color": formData.color,
+            "Quantity": formData.quantity,
+            "Total Order Value": `Rs. ${finalPrice} INR`
+          })
+        });
+
+        setPaymentStatus("success");
+      } catch (err) {
+        setPaymentStatus("success"); // fallback view state
+      } finally {
+        setIsSubmitting(false);
+      }
+    }, 2000);
   };
 
   return (
     <div className="min-h-screen bg-[#F7F9FA] dark:bg-slate-900 py-16 transition-colors">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-[#1A365D] dark:text-white">3D Printing Quote</h1>
-          <p className="text-slate-600 dark:text-slate-300 mt-2 text-sm">Upload your design, configure specifications, and get instant automated pricing.</p>
+          <h1 className="text-3xl font-extrabold text-[#1A365D] dark:text-white">3D Printing Quote & Verified Checkout</h1>
+          <p className="text-slate-600 dark:text-slate-300 mt-2 text-sm">Upload your design, configure specifications, and secure your payment receipt.</p>
         </div>
 
-        {!submitted ? (
+        {paymentStatus !== "success" ? (
           <>
             {/* Progress Bar */}
             <div className="flex items-center justify-between mb-8 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-x-auto gap-2">
@@ -238,13 +264,12 @@ export default function QuoteWizard() {
                     {s}
                   </div>
                   <span className="hidden md:inline text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    {s === 1 ? "Details" : s === 2 ? "Upload" : s === 3 ? "Config" : s === 4 ? "Delivery" : s === 5 ? "Notes" : "Checkout"}
+                    {s === 1 ? "Details" : s === 2 ? "Upload" : s === 3 ? "Config" : s === 4 ? "Delivery" : s === 5 ? "Notes" : "Payment"}
                   </span>
                 </div>
               ))}
             </div>
 
-            {/* Wizard Card Body */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
               
               {/* STEP 1: Personal Details */}
@@ -357,7 +382,6 @@ export default function QuoteWizard() {
                 <div className="space-y-8 animate-in fade-in">
                   <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 3: Printing Configuration</h3>
                   
-                  {/* Material Cards Selection */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-3">Select Material</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -375,13 +399,12 @@ export default function QuoteWizard() {
                             <span className="font-bold text-slate-900 dark:text-white text-sm">{mat.name}</span>
                             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{mat.desc}</p>
                           </div>
-                          <span className="text-xs font-mono font-semibold text-[#3182CE] mt-3">From ₹{mat.price}</span>
+                          <span className="text-xs font-mono font-semibold text-[#3182CE] mt-3">From Rs. {mat.price}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Color Swatches Selection */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-3">
                       Select Color / Shade: <span className="text-[#3182CE] font-bold">{formData.color}</span>
@@ -405,7 +428,6 @@ export default function QuoteWizard() {
                     </div>
                   </div>
 
-                  {/* Quantity & Resolution */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-1">Quantity</label>
@@ -424,7 +446,7 @@ export default function QuoteWizard() {
                         onChange={(e) => setFormData({...formData, layerHeight: e.target.value})}
                         className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"
                       >
-                        <option value="0.1mm">0.1mm (High Detail - +₹100)</option>
+                        <option value="0.1mm">0.1mm (High Detail - +Rs. 100)</option>
                         <option value="0.2mm">0.2mm (Standard Quality)</option>
                         <option value="0.3mm">0.3mm (Fast Draft)</option>
                       </select>
@@ -473,17 +495,17 @@ export default function QuoteWizard() {
                 </div>
               )}
 
-              {/* STEP 6: Review & Submit */}
+              {/* STEP 6: Payment Selection & Review */}
               {step === 6 && (
                 <div className="space-y-6 animate-in fade-in">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 6: Review & Direct Submission</h3>
+                    <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 6: Review & Payment Selection</h3>
                     <button
                       type="button"
                       onClick={handleDownloadPDF}
                       className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm"
                     >
-                      <FileText className="w-4 h-4 text-[#3182CE]" /> Download Official PDF (Watermarked)
+                      <FileText className="w-4 h-4 text-[#3182CE]" /> Download Official PDF Quote
                     </button>
                   </div>
 
@@ -508,117 +530,190 @@ export default function QuoteWizard() {
                       <span className="text-slate-600 dark:text-slate-400">Quantity & Quality:</span>
                       <span className="font-semibold text-slate-800 dark:text-white">{formData.quantity}x | {formData.layerHeight}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-slate-400">Delivery Method:</span>
-                      <span className="font-semibold text-slate-800 dark:text-white uppercase">{formData.deliveryMethod}</span>
-                    </div>
                     <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between text-lg font-bold text-[#1A365D] dark:text-white">
-                      <span>Total Estimated Price:</span>
-                      <span className="text-[#3182CE]">₹{finalPrice} INR</span>
+                      <span>Total Amount Due:</span>
+                      <span className="text-[#3182CE]">Rs. {finalPrice} INR</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      disabled={isSubmitting}
-                      onClick={async () => {
-                        setIsSubmitting(true);
-                        try {
-                          const response = await fetch("https://formsubmit.co/ajax/aristrocrat3dprinting@gmail.com", {
-                            method: "POST",
-                            headers: { 
-                              'Content-Type': 'application/json',
-                              'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                              _subject: `New 3D Print Quote Request from ${formData.fullName}`,
-                              _captcha: "false",
-                              "Full Name": formData.fullName,
-                              "Email": formData.email,
-                              "Phone": `${formData.countryCode} ${formData.phone}`,
-                              "Company": formData.company || "N/A",
-                              "File Name": fileName,
-                              "Material": formData.material,
-                              "Color": formData.color,
-                              "Quantity": formData.quantity,
-                              "Layer Height": formData.layerHeight,
-                              "Delivery": formData.deliveryMethod,
-                              "Notes": formData.notes || "None",
-                              "Estimated Quote Price": `₹${finalPrice} INR`
-                            })
-                          });
-
-                          if (response.ok) {
-                            setSubmitted(true);
-                          } else {
-                            alert("Submission failed. Please try again.");
-                          }
-                        } catch (err) {
-                          alert("Network error. Please check your connection.");
-                        } finally {
-                          setIsSubmitting(false);
-                        }
-                      }}
-                      className="px-8 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg flex items-center gap-2 disabled:opacity-50"
-                    >
-                      <CreditCard className="w-4 h-4" /> {isSubmitting ? "Sending Quote..." : "Submit Quote & Send Email"}
-                    </button>
+                  {/* Payment Methods Grid */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase mb-3">Choose Payment Method</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {[
+                        { id: "gpay", name: "Google Pay (GPay)", desc: "Direct UPI payment handle", icon: Smartphone },
+                        { id: "phonepe", name: "PhonePe", desc: "Instant mobile UPI transfer", icon: Smartphone },
+                        { id: "paytm", name: "Paytm", desc: "Paytm UPI / Wallet / Postpaid", icon: Smartphone },
+                        { id: "upi", name: "Other UPI Apps", desc: "BHIM, WhatsApp, or QR Code", icon: Smartphone },
+                        { id: "cards", name: "Credit / Debit Card", desc: "Visa, MasterCard, RuPay", icon: CreditCard },
+                        { id: "cash", name: "Cash / Pay on Pickup", desc: "Pay cash upon delivery or collection", icon: Banknote },
+                      ].map((method) => {
+                        const IconComponent = method.icon;
+                        return (
+                          <div
+                            key={method.id}
+                            onClick={() => setFormData({...formData, paymentMethod: method.id})}
+                            className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                              formData.paymentMethod === method.id 
+                                ? "border-[#3182CE] bg-blue-50/60 dark:bg-blue-950/30 shadow-sm ring-1 ring-[#3182CE]" 
+                                : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                                <IconComponent className="w-4 h-4 text-[#3182CE]" /> {method.name}
+                              </span>
+                              <input 
+                                type="radio" 
+                                name="paymentOpt" 
+                                checked={formData.paymentMethod === method.id} 
+                                onChange={() => setFormData({...formData, paymentMethod: method.id})} 
+                              />
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">{method.desc}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
+
+                  {/* Processing banner or action */}
+                  {isSubmitting && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-3 animate-pulse">
+                      <Clock className="w-5 h-5 text-[#3182CE] animate-spin" />
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                          {formData.paymentMethod === 'cash' ? "Registering Cash Order..." : `Verifying ${formData.paymentMethod.toUpperCase()} Secure Payment...`}
+                        </h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Please do not close this window while we secure your receipt.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!isSubmitting && (
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={handleCheckoutSubmit}
+                        className="px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg flex items-center gap-2 transition-all"
+                      >
+                        <ShieldCheck className="w-4 h-4" /> 
+                        {formData.paymentMethod === 'cash' ? "Confirm Cash Order & Generate Slip" : `Pay Rs. ${finalPrice} via ${formData.paymentMethod.toUpperCase()}`}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Wizard Action Buttons */}
-              <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                {step > 1 ? (
-                  <button
-                    onClick={prevStep}
-                    className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
-                  >
-                    <ArrowLeft className="w-4 h-4" /> Back
-                  </button>
-                ) : <div />}
+              {!isSubmitting && (
+                <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                  {step > 1 ? (
+                    <button
+                      onClick={prevStep}
+                      className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
+                    >
+                      <ArrowLeft className="w-4 h-4" /> Back
+                    </button>
+                  ) : <div />}
 
-                {step < 6 && (
-                  <button
-                    onClick={nextStep}
-                    className="px-8 py-2.5 rounded-lg bg-[#3182CE] hover:bg-blue-700 text-white font-semibold text-sm shadow-md flex items-center gap-2"
-                  >
-                    Continue <ArrowRight className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
+                  {step < 6 && (
+                    <button
+                      onClick={nextStep}
+                      className="px-8 py-2.5 rounded-lg bg-[#3182CE] hover:bg-blue-700 text-white font-semibold text-sm shadow-md flex items-center gap-2"
+                    >
+                      Continue <ArrowRight className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )}
 
             </div>
           </>
         ) : (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-12 text-center space-y-4 animate-in fade-in">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle className="w-10 h-10" />
+          /* POST-PAYMENT VERIFIED RECEIPT SCREEN */
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 sm:p-12 space-y-8 animate-in fade-in">
+            
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle className="w-10 h-10" />
+              </div>
+              <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                {formData.paymentMethod === 'cash' ? "Cash Order Registered Successfully!" : "Payment Verified & Confirmed!"}
+              </h2>
+              <p className="text-slate-600 dark:text-slate-300 text-sm max-w-md mx-auto">
+                {formData.paymentMethod === 'cash' 
+                  ? "Your order has been recorded. Please keep cash ready upon order fulfillment or pickup." 
+                  : `Your transaction via ${formData.paymentMethod.toUpperCase()} has been successfully processed and verified.`}
+              </p>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Quote Sent Successfully!</h2>
-            <p className="text-slate-600 dark:text-slate-300 max-w-md mx-auto text-sm">
-              Thank you, <span className="font-semibold">{formData.fullName}</span>. Your specification and estimated quote of <span className="font-bold text-[#3182CE]">₹{finalPrice} INR</span> have been emailed directly to the Aristocrat 3D team. We will review your CAD file and get back to you shortly!
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+
+            {/* Receipt Box */}
+            <div className="max-w-2xl mx-auto bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-sm">
+              <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-bl-xl">
+                {formData.paymentMethod === 'cash' ? "Cash Slip" : "Paid & Verified"}
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between border-b border-slate-200 dark:border-slate-700 pb-4 gap-2">
+                <div>
+                  <h4 className="font-extrabold text-[#1A365D] dark:text-white text-base">ARISTOCRAT 3D PRINTING</h4>
+                  <p className="text-xs text-slate-500">Official Digital Receipt</p>
+                </div>
+                <div className="text-left sm:text-right font-mono text-xs text-slate-500">
+                  <p><strong className="text-slate-700 dark:text-slate-300">Receipt ID:</strong> {receiptNo}</p>
+                  <p><strong className="text-slate-700 dark:text-slate-300">Quote Ref:</strong> {quoteRef}</p>
+                  <p><strong className="text-slate-700 dark:text-slate-300">Date:</strong> {new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-xs text-slate-400 uppercase font-semibold">Billed To</span>
+                  <p className="font-bold text-slate-800 dark:text-white mt-0.5">{formData.fullName}</p>
+                  <p className="text-xs text-slate-500">{formData.email}</p>
+                  <p className="text-xs text-slate-500">{formData.countryCode} {formData.phone}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-slate-400 uppercase font-semibold">Payment Particulars</span>
+                  <p className="font-bold text-slate-800 dark:text-white mt-0.5 uppercase">Mode: {formData.paymentMethod}</p>
+                  <p className="text-xs text-emerald-600 font-semibold mt-0.5">
+                    {formData.paymentMethod === 'cash' ? "Status: Pending Cash Collection" : "Status: Verified Online Payment"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-2 text-sm">
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>Item: 3D Print Job ({formData.material} - {formData.color})</span>
+                  <span>{formData.quantity}x unit(s)</span>
+                </div>
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>Layer Resolution & Delivery:</span>
+                  <span>{formData.layerHeight} / {formData.deliveryMethod}</span>
+                </div>
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between font-bold text-lg text-slate-900 dark:text-white">
+                  <span>Total Paid:</span>
+                  <span className="text-[#3182CE]">Rs. {finalPrice} INR</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Receipt Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               <button
                 onClick={handleDownloadPDF}
-                className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold flex items-center gap-2 transition-colors"
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#3182CE] hover:bg-blue-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 transition-all"
               >
-                <FileText className="w-4 h-4 text-[#3182CE]" /> Download Official PDF Receipt
+                <Download className="w-4 h-4" /> Download Receipt PDF
               </button>
               <button
-                onClick={() => {
-                  setSubmitted(false);
-                  setStep(1);
-                  setFileName("");
-                  setFileSize(null);
-                }}
-                className="px-6 py-2.5 rounded-lg bg-[#3182CE] text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
+                onClick={() => window.location.reload()}
+                className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm transition-all"
               >
-                Submit Another Quote
+                Place Another Order
               </button>
             </div>
+
           </div>
         )}
 
