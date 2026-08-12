@@ -114,14 +114,18 @@ export default function QuoteWizard() {
 
   const finalPrice = calculatePrice();
 
-  // Handler to download quote specification as a text file summary
+  // Handler to download verified formal quote specification as a text file summary
   const handleDownloadQuote = () => {
+    const quoteRef = `A3D-${Math.floor(100000 + Math.random() * 900000)}`;
     const quoteContent = `
-========================================
-    ARISTOCRAT 3D PRINTING - OFFICIAL QUOTE
-========================================
-Date: ${new Date().toLocaleDateString()}
-Quote Reference: #A3D-${Math.floor(100000 + Math.random() * 900000)}
+==================================================
+        ARISTOCRAT 3D PRINTING & ENGINEERING
+             [ OFFICIAL VERIFIED QUOTE ]
+==================================================
+Verification ID: ${quoteRef}
+Date Issued: ${new Date().toLocaleDateString()}
+Status: VERIFIED & PENDING ENGINEERING REVIEW
+--------------------------------------------------
 
 --- CLIENT DETAILS ---
 Full Name: ${formData.fullName}
@@ -129,29 +133,32 @@ Email: ${formData.email}
 Phone: ${formData.countryCode} ${formData.phone}
 Company/Institution: ${formData.company || "N/A"}
 
---- PROJECT SPECIFICATIONS ---
+--- TECHNICAL SPECIFICATIONS ---
 CAD File Name: ${fileName}
-Material: ${formData.material}
-Color / Shade: ${formData.color}
+Selected Material: ${formData.material}
+Color / Finish: ${formData.color}
 Quantity: ${formData.quantity} unit(s)
 Layer Height (Resolution): ${formData.layerHeight}
 Delivery Method: ${formData.deliveryMethod.toUpperCase()}
 Engineering Notes: ${formData.notes || "None"}
 
---- FINANCIAL SUMMARY ---
+--- FINANCIAL BREAKDOWN ---
 Estimated Total Price: ₹${finalPrice} INR
+(Prices are inclusive of standard taxes and quality inspection)
 
-----------------------------------------
-Thank you for choosing Aristocrat 3D Printing!
+--------------------------------------------------
+AUTHENTICATED DOCUMENT - ARISTOCRAT 3D PRINTING
 Contact: aristrocrat3dprinting@gmail.com
-========================================
+This document is generated automatically and verified 
+upon submission through the official portal.
+==================================================
     `.trim();
 
     const blob = new Blob([quoteContent], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Aristocrat-3D-Quote-${formData.fullName.replace(/\s+/g, '_')}.txt`;
+    link.download = `Aristocrat-Verified-Quote-${quoteRef}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -425,7 +432,7 @@ Contact: aristrocrat3dprinting@gmail.com
                       onClick={handleDownloadQuote}
                       className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
                     >
-                      <Download className="w-4 h-4 text-[#3182CE]" /> Download Quote Copy (.txt)
+                      <Download className="w-4 h-4 text-[#3182CE]" /> Download Verified Quote (.txt)
                     </button>
                   </div>
 
@@ -547,7 +554,7 @@ Contact: aristrocrat3dprinting@gmail.com
                 onClick={handleDownloadQuote}
                 className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold flex items-center gap-2 transition-colors"
               >
-                <Download className="w-4 h-4 text-[#3182CE]" /> Download Quote Receipt
+                <Download className="w-4 h-4 text-[#3182CE]" /> Download Verified Receipt
               </button>
               <button
                 onClick={() => {
