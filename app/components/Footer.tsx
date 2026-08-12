@@ -7,17 +7,13 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
         {/* Column 1: Brand Info */}
         <div>
-        <div className="flex items-center gap-3 mb-4">
-  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 via-[#3182CE] to-blue-900 flex items-center justify-center shadow-md border border-blue-400/30">
-    <span className="text-white font-black text-lg tracking-tighter">A</span>
-  </div>
-  <div className="flex flex-col">
-    <span className="text-white font-bold tracking-wider text-base leading-tight">
-      ARISTOCRAT
-    </span>
-    <span className="text-blue-400 font-mono tracking-widest text-[10px] uppercase">
-      3D Printing
-    </span>
+         <div className="flex items-center gap-2 mb-4">
+  <div className="inline-flex items-center">
+    <img
+      src="/images/logo.png?v=4"
+      alt="Aristocrat 3D Printing Logo"
+      className="h-20 w-auto object-contain"
+    />
   </div>
 </div>
           <p className="text-sm text-slate-400 mb-6 leading-relaxed">
