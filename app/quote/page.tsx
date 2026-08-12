@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download } from "lucide-react";
+import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download, FileText } from "lucide-react";
+import { jsPDF } from "jspdf";
 import STLViewer from "../components/STLViewer";
 
 export default function QuoteWizard() {
@@ -114,55 +115,105 @@ export default function QuoteWizard() {
 
   const finalPrice = calculatePrice();
 
-  // Handler to download verified formal quote specification as a text file summary
-  const handleDownloadQuote = () => {
+  // Handler to generate and download official PDF Quote with a Watermark Logo stamp
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
     const quoteRef = `A3D-${Math.floor(100000 + Math.random() * 900000)}`;
-    const quoteContent = `
-==================================================
-        ARISTOCRAT 3D PRINTING & ENGINEERING
-             [ OFFICIAL VERIFIED QUOTE ]
-==================================================
-Verification ID: ${quoteRef}
-Date Issued: ${new Date().toLocaleDateString()}
-Status: VERIFIED & PENDING ENGINEERING REVIEW
---------------------------------------------------
 
---- CLIENT DETAILS ---
-Full Name: ${formData.fullName}
-Email: ${formData.email}
-Phone: ${formData.countryCode} ${formData.phone}
-Company/Institution: ${formData.company || "N/A"}
+    // 1. Draw Watermark Background Stamp / Text across the center
+    doc.setTextColor(240, 242, 245); // Very soft light grey-blue tint for watermark effect
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(48);
+    
+    // Rotate canvas context for diagonal watermark text effect
+    doc.text("ARISTOCRAT 3D", 35, 150, { angle: 45 });
 
---- TECHNICAL SPECIFICATIONS ---
-CAD File Name: ${fileName}
-Selected Material: ${formData.material}
-Color / Finish: ${formData.color}
-Quantity: ${formData.quantity} unit(s)
-Layer Height (Resolution): ${formData.layerHeight}
-Delivery Method: ${formData.deliveryMethod.toUpperCase()}
-Engineering Notes: ${formData.notes || "None"}
+    // Reset styles for formal foreground document layout
+    doc.setTextColor(26, 54, 93); // Primary dark navy
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.text("ARISTOCRAT 3D PRINTING", 20, 20);
 
---- FINANCIAL BREAKDOWN ---
-Estimated Total Price: ₹${finalPrice} INR
-(Prices are inclusive of standard taxes and quality inspection)
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text("Official Verified Quotation & Specification Document", 20, 27);
 
---------------------------------------------------
-AUTHENTICATED DOCUMENT - ARISTOCRAT 3D PRINTING
-Contact: aristrocrat3dprinting@gmail.com
-This document is generated automatically and verified 
-upon submission through the official portal.
-==================================================
-    `.trim();
+    // Divider line
+    doc.setDrawColor(203, 213, 225);
+    doc.line(20, 32, 190, 32);
 
-    const blob = new Blob([quoteContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Aristocrat-Verified-Quote-${quoteRef}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Reference & Meta Info box
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Quote Reference: ${quoteRef}`, 20, 42);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, 42);
+
+    // Client Details Section
+    doc.setFillColor(248, 250, 252);
+    doc.rect(20, 48, 170, 38, "F");
+    
+    doc.setFont("helvetica", "bold");
+    doc.text("CLIENT INFORMATION", 25, 56);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Full Name: ${formData.fullName}`, 25, 63);
+    doc.text(`Email: ${formData.email}`, 25, 70);
+    doc.text(`Phone: ${formData.countryCode} ${formData.phone}`, 25, 77);
+    doc.text(`Company: ${formData.company || "N/A"}`, 110, 63);
+
+    // Technical Specifications Section
+    doc.setFont("helvetica", "bold");
+    doc.text("TECHNICAL SPECIFICATIONS", 20, 98);
+
+    const startY = 104;
+    const specs = [
+      ["CAD File Name:", fileName],
+      ["Selected Material:", formData.material],
+      ["Color / Finish:", formData.color],
+      ["Quantity Ordered:", `${formData.quantity} unit(s)`],
+      ["Layer Resolution:", formData.layerHeight],
+      ["Delivery Mode:", formData.deliveryMethod.toUpperCase()],
+      ["Engineering Notes:", formData.notes || "Standard manufacturing tolerances apply."]
+    ];
+
+    let currentY = startY;
+    specs.forEach(([label, value]) => {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(71, 85, 105);
+      doc.text(label, 20, currentY);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(15, 23, 42);
+      // Handle wrapping for longer notes text
+      const splitValue = doc.splitTextToSize(value, 100);
+      doc.text(splitValue, 75, currentY);
+      currentY += (splitValue.length * 6) + 2;
+    });
+
+    // Financial Breakdown Box
+    currentY += 6;
+    doc.setFillColor(239, 246, 255);
+    doc.rect(20, currentY, 170, 20, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 64, 175);
+    doc.text("ESTIMATED TOTAL PRICE:", 28, currentY + 13);
+    doc.setFontSize(14);
+    doc.text(`₹${finalPrice} INR`, 140, currentY + 13);
+
+    // Footer note
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    doc.text("This document is an official computer-generated quotation verified through the Aristocrat 3D portal.", 20, 280);
+
+    // Save the generated PDF file
+    doc.save(`Aristocrat-Quote-${quoteRef}.pdf`);
   };
 
   return (
@@ -429,10 +480,10 @@ upon submission through the official portal.
                     <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 6: Review & Direct Submission</h3>
                     <button
                       type="button"
-                      onClick={handleDownloadQuote}
-                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                      onClick={handleDownloadPDF}
+                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm"
                     >
-                      <Download className="w-4 h-4 text-[#3182CE]" /> Download Verified Quote (.txt)
+                      <FileText className="w-4 h-4 text-[#3182CE]" /> Download Official PDF (Watermarked)
                     </button>
                   </div>
 
@@ -551,10 +602,10 @@ upon submission through the official portal.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
               <button
-                onClick={handleDownloadQuote}
+                onClick={handleDownloadPDF}
                 className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold flex items-center gap-2 transition-colors"
               >
-                <Download className="w-4 h-4 text-[#3182CE]" /> Download Verified Receipt
+                <FileText className="w-4 h-4 text-[#3182CE]" /> Download Official PDF Receipt
               </button>
               <button
                 onClick={() => {
