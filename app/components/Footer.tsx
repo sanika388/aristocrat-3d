@@ -7,12 +7,12 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
         {/* Column 1: Brand Info */}
         <div>
-         <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4">
   <div className="inline-flex items-center">
     <img
       src="/images/logo.png?v=4"
       alt="Aristocrat 3D Printing Logo"
-      className="h-20 w-auto object-contain"
+      className="h-24 w-auto object-contain"
     />
   </div>
 </div>
