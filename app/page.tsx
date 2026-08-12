@@ -71,21 +71,8 @@ export default function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // State for Live Sliding Reviews & Client Submissions with LocalStorage persistence
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    if (typeof window !== "undefined") {
-      const savedReviews = localStorage.getItem("aristocrat_user_reviews");
-      if (savedReviews) {
-        try {
-          return JSON.parse(savedReviews);
-        } catch (e) {
-          console.error("Failed to parse local storage reviews", e);
-        }
-      }
-    }
-    return INITIAL_REVIEWS;
-  });
-
+  // State for Live Sliding Reviews & Client Submissions
+  const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -95,13 +82,6 @@ export default function Home() {
   const [newText, setNewText] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [newMaterial, setNewMaterial] = useState("PLA Pro");
-
-  // Save to localStorage whenever reviews change
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("aristocrat_user_reviews", JSON.stringify(reviews));
-    }
-  }, [reviews]);
 
   const materialsData = {
     pla: {
@@ -160,6 +140,24 @@ export default function Home() {
 
   const currentMat = materialsData[activeMaterial];
 
+  // Drag and Drop Handlers for CTA Dropzone
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      window.location.href = "/quote";
+    }
+  };
+
   // Handle new review submission
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,11 +178,9 @@ export default function Home() {
     setReviews([newReviewItem, ...reviews]);
     setIsModalOpen(false);
     
-    // Reset form fields
     setNewAuthor("");
     setNewRole("");
     setNewText("");
-    setNewRating(5);
   };
 
   return (
@@ -222,168 +218,476 @@ export default function Home() {
               Explore Portfolio
             </Link>
           </div>
+
+          <div className="max-w-5xl mx-auto relative rounded-3xl overflow-hidden border border-slate-700/60 shadow-[0_0_50px_rgba(0,0,0,0.8)] bg-slate-950 group">
+            <div className="relative aspect-video w-full overflow-hidden">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                poster="/hero-poster.jpg"
+                className="absolute inset-0 w-full h-full object-cover scale-125 origin-center transition-transform duration-1000 group-hover:scale-130"
+              >
+                <source src="/ai-printer-hero.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-slate-950/40 to-slate-950/80 pointer-events-none" />
+            </div>
+
+            <div 
+              role="region" 
+              aria-label="Manufacturing workflow steps sequence" 
+              className="bg-slate-900/90 backdrop-blur-2xl border-t border-slate-800/80 px-4 sm:px-6 py-4 flex items-center justify-between text-xs font-medium tracking-wide overflow-x-auto whitespace-nowrap gap-4 scrollbar-none"
+            >
+              <div tabIndex={0} className="flex items-center gap-2 text-blue-400 group-hover:text-blue-300 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1">
+                <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20"><Sparkles className="w-3.5 h-3.5" /></div>
+                <span>Idea</span>
+              </div>
+              <span className="text-slate-700 shrink-0" aria-hidden="true">──</span>
+              <div tabIndex={0} className="flex items-center gap-2 text-cyan-400 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1">
+                <div className="w-6 h-6 rounded-lg bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20"><Sliders className="w-3.5 h-3.5" /></div>
+                <span>CAD Design</span>
+              </div>
+              <span className="text-slate-700 shrink-0" aria-hidden="true">──</span>
+              <div tabIndex={0} className="flex items-center gap-2 text-indigo-400 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1">
+                <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20"><Box className="w-3.5 h-3.5" /></div>
+                <span>Slicing</span>
+              </div>
+              <span className="text-slate-700 shrink-0" aria-hidden="true">──</span>
+              <div tabIndex={0} className="flex items-center gap-2 text-amber-400 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1">
+                <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center border border-amber-500/20"><Flame className="w-3.5 h-3.5" /></div>
+                <span>Heating</span>
+              </div>
+              <span className="text-slate-700 shrink-0" aria-hidden="true">──</span>
+              <div tabIndex={0} className="flex items-center gap-2 text-emerald-400 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1">
+                <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20"><Printer className="w-3.5 h-3.5" /></div>
+                <span>Printing</span>
+              </div>
+              <span className="text-slate-700 shrink-0" aria-hidden="true">──</span>
+              <div tabIndex={0} className="flex items-center gap-2 text-blue-200 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1">
+                <div className="w-6 h-6 rounded-lg bg-blue-400/10 flex items-center justify-center border border-blue-400/20"><ShieldCheck className="w-3.5 h-3.5" /></div>
+                <span>Finished Product</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-16 pt-8 border-t border-slate-800/80 max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div tabIndex={0} className="group relative overflow-hidden bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-blue-950/30 p-5 rounded-2xl border border-slate-800 hover:border-blue-500/50 transition-all duration-300 shadow-xl hover:shadow-blue-500/10 text-center flex flex-col items-center justify-center gap-3 backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+              <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                <Activity className="w-5 h-5" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-100 tracking-wide">High Precision</span>
+            </div>
+
+            <div tabIndex={0} className="group relative overflow-hidden bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-cyan-950/30 p-5 rounded-2xl border border-slate-800 hover:border-cyan-500/50 transition-all duration-300 shadow-xl hover:shadow-cyan-500/10 text-center flex flex-col items-center justify-center gap-3 backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+              <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                <Layers className="w-5 h-5" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-100 tracking-wide">Multiple Materials</span>
+            </div>
+
+            <div tabIndex={0} className="group relative overflow-hidden bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-indigo-950/30 p-5 rounded-2xl border border-slate-800 hover:border-indigo-500/50 transition-all duration-300 shadow-xl hover:shadow-indigo-500/10 text-center flex flex-col items-center justify-center gap-3 backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+              <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                <Wrench className="w-5 h-5" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-100 tracking-wide">Professional Finishing</span>
+            </div>
+
+            <div tabIndex={0} className="group relative overflow-hidden bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-emerald-950/30 p-5 rounded-2xl border border-slate-800 hover:border-emerald-500/50 transition-all duration-300 shadow-xl hover:shadow-emerald-500/10 text-center flex flex-col items-center justify-center gap-3 backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+              <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                <Zap className="w-5 h-5" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-100 tracking-wide">Fast Response</span>
+            </div>
+
+            <div tabIndex={0} className="col-span-2 md:col-span-1 group relative overflow-hidden bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-amber-950/30 p-5 rounded-2xl border border-slate-800 hover:border-amber-500/50 transition-all duration-300 shadow-xl hover:shadow-amber-500/10 text-center flex flex-col items-center justify-center gap-3 backdrop-blur-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+              <div className="absolute inset-0 bg-amber-500/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-slate-100 tracking-wide">Custom Manufacturing</span>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* REVIEWS SECTION WITH LIVE SLIDER & SUBMISSION MODAL */}
+      {/* 2. SERVICES & CAPABILITIES SECTION */}
+      <section className="py-24 bg-[#050813] relative border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3">
+              Our Capabilities
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Precision Services Tailored for Every Project</h2>
+            <p className="text-slate-400 mt-4 text-base font-light">From functional mechanical end-use parts to highly detailed aesthetic prototypes, we deliver industrial excellence.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-blue-500/50 p-8 transition-all duration-500 group flex flex-col justify-between shadow-2xl">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-all pointer-events-none" />
+              <div>
+                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-6 border border-blue-500/20 group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                  <Box className="w-7 h-7" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Prototype Printing</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-8 font-light">
+                  Rapid turnaround iterations for product design testing, form, fit, and visual validation before mass production.
+                </p>
+              </div>
+              <Link href="/services" aria-label="Learn more about Prototype Printing" className="inline-flex items-center justify-between w-full p-4 rounded-xl bg-slate-900/80 hover:bg-blue-600 hover:text-white text-slate-300 text-sm font-semibold border border-slate-800 transition-all group/btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <span>Learn More</span>
+                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-cyan-500/50 p-8 transition-all duration-500 group flex flex-col justify-between shadow-2xl">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-600/10 rounded-full blur-3xl group-hover:bg-cyan-600/20 transition-all pointer-events-none" />
+              <div>
+                <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-6 border border-cyan-500/20 group-hover:scale-110 group-hover:bg-cyan-500 group-hover:text-white transition-all">
+                  <Cpu className="w-7 h-7" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Functional End-Use Parts</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-8 font-light">
+                  Engineered for structural strength and thermal resistance using advanced industrial filaments like ABS, Nylon, and Carbon Fiber.
+                </p>
+              </div>
+              <Link href="/services" aria-label="Learn more about Functional End-Use Parts" className="inline-flex items-center justify-between w-full p-4 rounded-xl bg-slate-900/80 hover:bg-cyan-600 hover:text-white text-slate-300 text-sm font-semibold border border-slate-800 transition-all group/btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <span>Learn More</span>
+                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 hover:border-indigo-500/50 p-8 transition-all duration-500 group flex flex-col justify-between shadow-2xl">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl group-hover:bg-indigo-600/20 transition-all pointer-events-none" />
+              <div>
+                <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-6 border border-indigo-500/20 group-hover:scale-110 group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                  <ShieldCheck className="w-7 h-7" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Miniatures & Custom Orders</h3>
+                <p className="text-slate-400 text-sm leading-relaxed mb-8 font-light">
+                  High-resolution resin printing optimized for intricate tabletop miniatures, jewelry casting patterns, and custom artistic pieces.
+                </p>
+              </div>
+              <Link href="/services" aria-label="Learn more about Miniatures and Custom Orders" className="inline-flex items-center justify-between w-full p-4 rounded-xl bg-slate-900/80 hover:bg-indigo-600 hover:text-white text-slate-300 text-sm font-semibold border border-slate-800 transition-all group/btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <span>Learn More</span>
+                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. STEP 1: INTERACTIVE MATERIAL SELECTOR TABS & DYNAMIC PREVIEW METRICS */}
+      <section className="py-24 bg-[#070b19] relative border-t border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+               
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Engineered Filaments & Resins Preview</h2>
+            </div>
+            <p className="text-slate-400 text-sm max-w-md font-light leading-relaxed">
+              Click between different materials below to instantly preview dynamic physical ratings, layer resolution, and pricing multipliers.
+            </p>
+          </div>
+
+          <div role="tablist" aria-label="Material selector" className="flex flex-wrap gap-3 mb-8 bg-slate-900/80 p-2 rounded-2xl border border-slate-800/80 backdrop-blur-xl">
+            <button
+              role="tab"
+              aria-selected={activeMaterial === 'pla'}
+              onClick={() => setActiveMaterial('pla')}
+              className={`flex-1 min-w-[130px] px-5 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${activeMaterial === 'pla' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+            >
+              PLA Pro
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeMaterial === 'abs'}
+              onClick={() => setActiveMaterial('abs')}
+              className={`flex-1 min-w-[130px] px-5 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${activeMaterial === 'abs' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+            >
+              ABS & ASA
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeMaterial === 'resin'}
+              onClick={() => setActiveMaterial('resin')}
+              className={`flex-1 min-w-[130px] px-5 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${activeMaterial === 'resin' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+            >
+              UV Resin
+            </button>
+            <button
+              role="tab"
+              aria-selected={activeMaterial === 'nylon'}
+              onClick={() => setActiveMaterial('nylon')}
+              className={`flex-1 min-w-[130px] px-5 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${activeMaterial === 'nylon' ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+            >
+              Carbon Fiber Nylon
+            </button>
+          </div>
+
+          <div className="bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-slate-950 border border-slate-800/80 p-8 sm:p-10 rounded-3xl shadow-2xl transition-all duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+              <div className="lg:col-span-2">
+                <div className="flex items-center justify-between mb-4">
+                  <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${currentMat.badgeColor}`}>
+                    {currentMat.badge}
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">Code: {currentMat.code}</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-4">{currentMat.name}</h3>
+                <p className="text-slate-300 text-sm sm:text-base font-light leading-relaxed mb-8">
+                  {currentMat.description}
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <Link 
+                    href="/quote" 
+                    aria-label={`Select ${currentMat.name} for instant quote`}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  >
+                    Select Material in Quote Flow
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+
+              <div className="bg-slate-950/80 border border-slate-800 p-6 rounded-2xl flex flex-col gap-5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-3">Dynamic Preview Metrics</h4>
+                
+                <div>
+                  <div className="flex justify-between text-xs font-semibold mb-1.5">
+                    <span className="text-slate-400">Tensile Strength</span>
+                    <span className="text-cyan-400">{currentMat.strengthLabel}</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full transition-all duration-500" style={{ width: `${currentMat.strength}%` }} />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs py-2 border-t border-slate-800/80">
+                  <span className="text-slate-400">Thermal Resistance</span>
+                  <span className="font-bold text-white font-mono">{currentMat.thermal}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs py-2 border-t border-slate-800/80">
+                  <span className="text-slate-400">Layer Resolution</span>
+                  <span className="font-bold text-indigo-400 font-mono">{currentMat.resolution}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-xs py-2 border-t border-slate-800/80">
+                  <span className="text-slate-400">Pricing Factor</span>
+                  <span className="font-bold text-emerald-400 font-mono">{currentMat.priceMultiplier}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. LIVE FLOATING REVIEWS & GOOGLE REVIEWS SECTION */}
       <section className="py-24 bg-[#050813] relative border-t border-slate-800/50 overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 mb-12 text-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Client Reviews</h2>
+           
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight"> Reviews </h2>
           <p className="text-slate-400 mt-4 text-base font-light max-w-2xl mx-auto">
-            See live feedback from our custom orders. Want to share your experience? Leave a review below!
+            See live sliding feedback from our custom orders. Want to share your experience? Leave a review below!
           </p>
 
           <div className="mt-8">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-sm shadow-lg shadow-blue-500/20 transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-sm shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <MessageSquarePlus className="w-4 h-4" />
-              Write a Review
+              Submit Your Review
             </button>
           </div>
         </div>
 
-        {/* Live Sliding Review Grid / Ticker */}
+        {/* FLOATING INFINITE SLIDING MARQUEE */}
         <div 
           className="relative w-full overflow-hidden py-4"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          <div className={`flex gap-6 w-max animate-scroll px-4 ${isPaused ? '[animation-play-state:paused]' : ''}`}>
-            {reviews.concat(reviews).map((rev, idx) => (
-              <div 
-                key={`${rev.id}-${idx}`}
-                className="w-[350px] sm:w-[400px] bg-slate-900/90 border border-slate-800/80 p-6 rounded-2xl flex flex-col justify-between shadow-xl backdrop-blur-xl shrink-0"
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#050813] to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#050813] to-transparent z-10 pointer-events-none" />
+
+          <div className={`flex gap-6 w-max animate-marquee ${isPaused ? 'style-pause' : ''}`} style={{ animation: 'marquee 35s linear infinite', animationPlayState: isPaused ? 'paused' : 'running' }}>
+            {[...reviews, ...reviews].map((review, index) => (
+              <div
+                key={`${review.id}-${index}`}
+                tabIndex={0}
+                className="w-[350px] sm:w-[400px] bg-slate-900/90 border border-slate-800/80 hover:border-blue-500/50 p-6 rounded-3xl flex flex-col justify-between shadow-xl backdrop-blur-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 shrink-0"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-1 text-amber-400">
-                      {[...Array(rev.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1 text-amber-400" aria-label={`${review.rating} out of 5 stars`}>
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
                       ))}
                     </div>
-                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                      {rev.materialLabel}
-                    </span>
+                    
+                    {review.source === "google" ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-full border border-cyan-800/60">
+                        <Globe className="w-3 h-3" /> Google Review
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded-full border border-slate-800">
+                        {review.materialLabel}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-slate-300 text-sm font-light leading-relaxed mb-6">
-                    &ldquo;{rev.text}&rdquo;
+
+                  <p className="text-slate-300 text-xs sm:text-sm leading-relaxed italic mb-6 font-light line-clamp-3">
+                    &quot;{review.text}&quot;
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-800 pt-4 text-xs">
-                  <div>
-                    <h4 className="font-bold text-white">{rev.name}</h4>
-                    <p className="text-slate-400">{rev.role}</p>
+                <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center font-bold text-blue-400 text-xs">
+                      {review.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1">
+                        <h4 className="text-xs font-bold text-white">{review.name}</h4>
+                        {review.verified && (
+                          <CheckCircle2 className="w-3 h-3 text-blue-400" aria-label="Verified" />
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-400">{review.role}</p>
+                    </div>
                   </div>
-                  <span className="text-slate-500 font-mono">{rev.date}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">{review.date}</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* REVIEW SUBMISSION MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-            <button 
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/80 p-2 rounded-full transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-2xl font-bold text-white mb-2">Share Your Experience</h3>
-            <p className="text-slate-400 text-sm mb-6">Your review will be instantly saved and displayed live.</p>
-
-            <form onSubmit={handleSubmitReview} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Your Name</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="e.g. Alex Morgan"
-                  value={newAuthor}
-                  onChange={(e) => setNewAuthor(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Role / Company</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Hardware Designer"
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Material Used</label>
-                  <select 
-                    value={newMaterial}
-                    onChange={(e) => setNewMaterial(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                  >
-                    <option value="PLA Pro">PLA Pro</option>
-                    <option value="ABS & ASA">ABS & ASA</option>
-                    <option value="UV Resin">UV Resin</option>
-                    <option value="Carbon Fiber Nylon">Carbon Fiber Nylon</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Rating (1-5)</label>
-                  <select 
-                    value={newRating}
-                    onChange={(e) => setNewRating(Number(e.target.value))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                  >
-                    <option value="5">5 Stars - Excellent</option>
-                    <option value="4">4 Stars - Great</option>
-                    <option value="3">3 Stars - Good</option>
-                    <option value="2">2 Stars - Fair</option>
-                    <option value="1">1 Star - Poor</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Review Comment</label>
-                <textarea 
-                  required
-                  rows={3}
-                  placeholder="How was your experience with our prints and service?"
-                  value={newText}
-                  onChange={(e) => setNewText(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3">
+        {/* SUBMIT REVIEW MODAL */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+            <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+              
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+                <h3 className="text-lg font-bold text-white">Leave Your Review</h3>
                 <button 
-                  type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-3 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-sm font-semibold transition-colors"
+                  className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  className="px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all"
-                >
-                  Post Review
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleSubmitReview} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Your Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newAuthor}
+                    onChange={(e) => setNewAuthor(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Role / Company</label>
+                    <input
+                      type="text"
+                      value={newRole}
+                      onChange={(e) => setNewRole(e.target.value)}
+                      placeholder="e.g. Product Designer"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">Material Used</label>
+                    <select
+                      value={newMaterial}
+                      onChange={(e) => setNewMaterial(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+                    >
+                      <option value="PLA Pro">PLA Pro</option>
+                      <option value="ABS & ASA">ABS & ASA</option>
+                      <option value="UV Resin">UV Resin</option>
+                      <option value="Carbon Fiber Nylon">Carbon Fiber Nylon</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Rating</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        key={star}
+                        onClick={() => setNewRating(star)}
+                        className="p-1 focus-visible:outline-none"
+                      >
+                        <Star className={`w-6 h-6 ${star <= newRating ? 'fill-amber-400 text-amber-400' : 'text-slate-700'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Review Message *</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={newText}
+                    onChange={(e) => setNewText(e.target.value)}
+                    placeholder="Share details about your print quality, shipping speed, or accuracy..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                  />
+                </div>
+
+                <div className="pt-4 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-500/20 transition-all"
+                  >
+                    <Send className="w-4 h-4" />
+                    Publish Review
+                  </button>
+                </div>
+              </form>
+
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        <style jsx>{`
+          @keyframes marquee {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-marquee {
+            display: flex;
+            width: max-content;
+          }
+        `}</style>
+      </section>
 
     </div>
   );
