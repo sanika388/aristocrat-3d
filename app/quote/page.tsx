@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard } from "lucide-react";
+import { Upload, CheckCircle, ArrowRight, ArrowLeft, CreditCard, Download } from "lucide-react";
 import STLViewer from "../components/STLViewer";
 
 export default function QuoteWizard() {
@@ -113,6 +113,50 @@ export default function QuoteWizard() {
   };
 
   const finalPrice = calculatePrice();
+
+  // Handler to download quote specification as a text file summary
+  const handleDownloadQuote = () => {
+    const quoteContent = `
+========================================
+    ARISTOCRAT 3D PRINTING - OFFICIAL QUOTE
+========================================
+Date: ${new Date().toLocaleDateString()}
+Quote Reference: #A3D-${Math.floor(100000 + Math.random() * 900000)}
+
+--- CLIENT DETAILS ---
+Full Name: ${formData.fullName}
+Email: ${formData.email}
+Phone: ${formData.countryCode} ${formData.phone}
+Company/Institution: ${formData.company || "N/A"}
+
+--- PROJECT SPECIFICATIONS ---
+CAD File Name: ${fileName}
+Material: ${formData.material}
+Color / Shade: ${formData.color}
+Quantity: ${formData.quantity} unit(s)
+Layer Height (Resolution): ${formData.layerHeight}
+Delivery Method: ${formData.deliveryMethod.toUpperCase()}
+Engineering Notes: ${formData.notes || "None"}
+
+--- FINANCIAL SUMMARY ---
+Estimated Total Price: ₹${finalPrice} INR
+
+----------------------------------------
+Thank you for choosing Aristocrat 3D Printing!
+Contact: aristrocrat3dprinting@gmail.com
+========================================
+    `.trim();
+
+    const blob = new Blob([quoteContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Aristocrat-3D-Quote-${formData.fullName.replace(/\s+/g, '_')}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F9FA] dark:bg-slate-900 py-16 transition-colors">
@@ -371,89 +415,100 @@ export default function QuoteWizard() {
                 </div>
               )}
 
+              {/* STEP 6: Review & Submit */}
               {step === 6 && (
-  <div className="space-y-6 animate-in fade-in">
-    <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 6: Review & Direct Submission</h3>
-    <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 text-sm">
-      <div className="flex justify-between">
-        <span className="text-slate-600 dark:text-slate-400">Client Name:</span>
-        <span className="font-semibold text-slate-800 dark:text-white">{formData.fullName}</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-slate-600 dark:text-slate-400">Email & Phone:</span>
-        <span className="font-semibold text-slate-800 dark:text-white">{formData.email} | {formData.countryCode} {formData.phone}</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-slate-600 dark:text-slate-400">Uploaded File:</span>
-        <span className="font-semibold text-slate-800 dark:text-white">{fileName}</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-slate-600 dark:text-slate-400">Selected Material:</span>
-        <span className="font-semibold text-slate-800 dark:text-white">{formData.material} ({formData.color})</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-slate-600 dark:text-slate-400">Quantity & Quality:</span>
-        <span className="font-semibold text-slate-800 dark:text-white">{formData.quantity}x | {formData.layerHeight}</span>
-      </div>
-      <div className="flex justify-between">
-        <span className="text-slate-600 dark:text-slate-400">Delivery Method:</span>
-        <span className="font-semibold text-slate-800 dark:text-white uppercase">{formData.deliveryMethod}</span>
-      </div>
-      <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between text-lg font-bold text-[#1A365D] dark:text-white">
-        <span>Total Estimated Price:</span>
-        <span className="text-[#3182CE]">₹{finalPrice} INR</span>
-      </div>
-    </div>
+                <div className="space-y-6 animate-in fade-in">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <h3 className="text-xl font-bold text-[#1A365D] dark:text-white">Step 6: Review & Direct Submission</h3>
+                    <button
+                      type="button"
+                      onClick={handleDownloadQuote}
+                      className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      <Download className="w-4 h-4 text-[#3182CE]" /> Download Quote Copy (.txt)
+                    </button>
+                  </div>
 
-    <div className="flex justify-end">
-      <button
-        type="button"
-        disabled={isSubmitting}
-        onClick={async () => {
-          setIsSubmitting(true);
-          try {
-            const response = await fetch("https://formsubmit.co/ajax/aristrocrat3dprinting@gmail.com", {
-              method: "POST",
-              headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({
-                _subject: `New 3D Print Quote Request from ${formData.fullName}`,
-                _captcha: "false",
-                "Full Name": formData.fullName,
-                "Email": formData.email,
-                "Phone": `${formData.countryCode} ${formData.phone}`,
-                "Company": formData.company || "N/A",
-                "File Name": fileName,
-                "Material": formData.material,
-                "Color": formData.color,
-                "Quantity": formData.quantity,
-                "Layer Height": formData.layerHeight,
-                "Delivery": formData.deliveryMethod,
-                "Notes": formData.notes || "None",
-                "Estimated Quote Price": `₹${finalPrice} INR`
-              })
-            });
+                  <div className="bg-slate-50 dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">Client Name:</span>
+                      <span className="font-semibold text-slate-800 dark:text-white">{formData.fullName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">Email & Phone:</span>
+                      <span className="font-semibold text-slate-800 dark:text-white">{formData.email} | {formData.countryCode} {formData.phone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">Uploaded File:</span>
+                      <span className="font-semibold text-slate-800 dark:text-white">{fileName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">Selected Material:</span>
+                      <span className="font-semibold text-slate-800 dark:text-white">{formData.material} ({formData.color})</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">Quantity & Quality:</span>
+                      <span className="font-semibold text-slate-800 dark:text-white">{formData.quantity}x | {formData.layerHeight}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">Delivery Method:</span>
+                      <span className="font-semibold text-slate-800 dark:text-white uppercase">{formData.deliveryMethod}</span>
+                    </div>
+                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between text-lg font-bold text-[#1A365D] dark:text-white">
+                      <span>Total Estimated Price:</span>
+                      <span className="text-[#3182CE]">₹{finalPrice} INR</span>
+                    </div>
+                  </div>
 
-            if (response.ok) {
-              setSubmitted(true);
-            } else {
-              alert("Submission failed. Please try again.");
-            }
-          } catch (err) {
-            alert("Network error. Please check your connection.");
-          } finally {
-            setIsSubmitting(false);
-          }
-        }}
-        className="px-8 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg flex items-center gap-2 disabled:opacity-50"
-      >
-        <CreditCard className="w-4 h-4" /> {isSubmitting ? "Sending Quote..." : "Submit Quote & Send Email"}
-      </button>
-    </div>
-  </div>
-)}
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={async () => {
+                        setIsSubmitting(true);
+                        try {
+                          const response = await fetch("https://formsubmit.co/ajax/aristrocrat3dprinting@gmail.com", {
+                            method: "POST",
+                            headers: { 
+                              'Content-Type': 'application/json',
+                              'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({
+                              _subject: `New 3D Print Quote Request from ${formData.fullName}`,
+                              _captcha: "false",
+                              "Full Name": formData.fullName,
+                              "Email": formData.email,
+                              "Phone": `${formData.countryCode} ${formData.phone}`,
+                              "Company": formData.company || "N/A",
+                              "File Name": fileName,
+                              "Material": formData.material,
+                              "Color": formData.color,
+                              "Quantity": formData.quantity,
+                              "Layer Height": formData.layerHeight,
+                              "Delivery": formData.deliveryMethod,
+                              "Notes": formData.notes || "None",
+                              "Estimated Quote Price": `₹${finalPrice} INR`
+                            })
+                          });
+
+                          if (response.ok) {
+                            setSubmitted(true);
+                          } else {
+                            alert("Submission failed. Please try again.");
+                          }
+                        } catch (err) {
+                          alert("Network error. Please check your connection.");
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      className="px-8 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <CreditCard className="w-4 h-4" /> {isSubmitting ? "Sending Quote..." : "Submit Quote & Send Email"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Wizard Action Buttons */}
               <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
@@ -466,59 +521,13 @@ export default function QuoteWizard() {
                   </button>
                 ) : <div />}
 
-                {step < 6 ? (
+                {step < 6 && (
                   <button
                     onClick={nextStep}
                     className="px-8 py-2.5 rounded-lg bg-[#3182CE] hover:bg-blue-700 text-white font-semibold text-sm shadow-md flex items-center gap-2"
                   >
                     Continue <ArrowRight className="w-4 h-4" />
                   </button>
-                ) : (
-                  <form
-                    action="https://formsubmit.co/aristrocrat3dprinting@gmail.com"
-                    method="POST"
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      setIsSubmitting(true);
-
-                      try {
-                        const response = await fetch("https://formsubmit.co/ajax/aristrocrat3dprinting@gmail.com", {
-                          method: "POST",
-                          headers: { 
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                          },
-                          body: JSON.stringify({
-                            _subject: `New 3D Print Quote Request from ${formData.fullName}`,
-                            "Full Name": formData.fullName,
-                            "Email": formData.email,
-                            "Phone": `${formData.countryCode} ${formData.phone}`,
-                            "Company": formData.company || "N/A",
-                            "File Name": fileName,
-                            "Material": formData.material,
-                            "Color": formData.color,
-                            "Quantity": formData.quantity,
-                            "Layer Height": formData.layerHeight,
-                            "Delivery": formData.deliveryMethod,
-                            "Notes": formData.notes || "None",
-                            "Estimated Quote Price": `₹${finalPrice} INR`
-                          })
-                        });
-
-                        if (response.ok) {
-                          setSubmitted(true);
-                        } else {
-                          alert("Submission failed. Please try again.");
-                        }
-                      } catch (err) {
-                        alert("Network error. Please check your connection.");
-                      } finally {
-                        setIsSubmitting(false);
-                      }
-                    }}
-                  >
-                     
-                  </form>
                 )}
               </div>
 
@@ -533,17 +542,25 @@ export default function QuoteWizard() {
             <p className="text-slate-600 dark:text-slate-300 max-w-md mx-auto text-sm">
               Thank you, <span className="font-semibold">{formData.fullName}</span>. Your specification and estimated quote of <span className="font-bold text-[#3182CE]">₹{finalPrice} INR</span> have been emailed directly to the Aristocrat 3D team. We will review your CAD file and get back to you shortly!
             </p>
-            <button
-              onClick={() => {
-                setSubmitted(false);
-                setStep(1);
-                setFileName("");
-                setFileSize(null);
-              }}
-              className="mt-4 px-6 py-2.5 rounded-lg bg-[#3182CE] text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
-            >
-              Submit Another Quote
-            </button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+              <button
+                onClick={handleDownloadQuote}
+                className="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold flex items-center gap-2 transition-colors"
+              >
+                <Download className="w-4 h-4 text-[#3182CE]" /> Download Quote Receipt
+              </button>
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  setStep(1);
+                  setFileName("");
+                  setFileSize(null);
+                }}
+                className="px-6 py-2.5 rounded-lg bg-[#3182CE] text-white font-semibold text-sm hover:bg-blue-700 transition-colors"
+              >
+                Submit Another Quote
+              </button>
+            </div>
           </div>
         )}
 
