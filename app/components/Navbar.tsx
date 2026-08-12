@@ -26,16 +26,22 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         
-        <Link href="/" className="flex items-center gap-2 group">
-  <div className="flex items-center group-hover:scale-105 transition-transform">
-    <img
-      src="/images/logo.png?v=4"
-      alt="Aristocrat 3D Printing Logo"
-      className="h-16 md:h-12 w-auto object-contain"
-    />
+        <Link href="/" className="flex items-center gap-3 group">
+  {/* Modern 3D Geometric Icon Box */}
+  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 via-[#3182CE] to-blue-900 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform border border-blue-400/30">
+    <span className="text-white font-black text-xl tracking-tighter">A</span>
+  </div>
+  
+  {/* Brand Text */}
+  <div className="flex flex-col">
+    <span className="text-white font-bold tracking-wider text-base md:text-lg leading-tight group-hover:text-blue-400 transition-colors">
+      ARISTOCRAT
+    </span>
+    <span className="text-blue-400 font-mono tracking-widest text-[10px] uppercase">
+      3D Printing
+    </span>
   </div>
 </Link>
-
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center gap-8 font-medium text-sm text-slate-200">
           <Link href="/" className="hover:text-[#3182CE] transition-colors">Home</Link>
