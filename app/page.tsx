@@ -65,6 +65,11 @@ export default function Home() {
       alert('Error submitting review. Please try again.');
     } else {
       setIsSubmitted(true);
+      // Clear out form inputs immediately so old text does not linger
+      setName("");
+      setRole("");
+      setRating(5);
+      setMessage("");
     }
   }
 
